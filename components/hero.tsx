@@ -1,44 +1,28 @@
 import NextLogo from "./next-logo";
 import SupabaseLogo from "./supabase-logo";
+import Image from "next/image";
+import { Button } from "./ui/button";
 
 export default function Header() {
   return (
-    <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
+    <section className="relative h-[80vh] flex items-center justify-center bg-gray-100 overflow-hidden">
+      <Image
+        src="/hero.jpg"
+        alt="Hero Image"
+        className="absolute object-cover w-full h-full blur-sm brightness-75"
+        width={1920}
+        height={1080}
+        priority
+      />
+      <div className="relative z-10 m-4 text-center text-white">
+        <h1 className="text-5xl font-bold mb-4">University of Waterloo Outers Club</h1>
+        <p className="text-lg mb-8">Join us on our next adventure!</p>
+        <Button size="lg">
+          <a href="/sign-up" className="flex items-center gap-2">
+            Sign Up
+          </a>
+        </Button>
       </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
-      </p>
-      <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
-    </div>
+    </section>
   );
 }
