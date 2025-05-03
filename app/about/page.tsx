@@ -99,6 +99,9 @@ export default async function About() {
             </a>{" "}
             to stay up-to-date on announcements and events.
           </li>
+          <li>
+            Click the button below to register to rent gear
+          </li>
         </ol>
         <Button className="mt-4" variant="outline">
           <a href="/sign-up">Sign Up</a>
