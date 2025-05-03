@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface PageProps {
   params: { category: string }
@@ -19,6 +20,11 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <div className="container mx-auto py-10">
+      <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
+        <Link href="/gear" className="hover:underline">Gear Categories</Link>
+        <span>/</span>
+        <span className="capitalize">{params.category}</span>
+      </nav>
       <h1 className="text-4xl font-bold mb-8 capitalize">{params.category}</h1>
       {items && items.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -40,8 +46,15 @@ export default async function Page({ params }: PageProps) {
                   />
                 </div>
               )}
-              <div className="text-sm text-muted-foreground mb-2">{item.description}</div>
-              <div className="font-medium">Amount available: {item.num_available ?? 'N/A'}</div>
+              <div className="text-sm text-muted-foreground mb-2">
+                {item.description.length > 100
+                  ? `${item.description.slice(0, 100)}...`
+                  : item.description}
+              </div>
+              <div className="flex items-center gap-6">
+                <span className="text-xl font-semibold text-primary">${item.price ?? 'N/A'}</span>
+                <span className="text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
+              </div>
             </CardContent>
               </a>
             </Card>

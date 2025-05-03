@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
+import ProductReservationClient from './ProductReservationClient'
 
 interface PageProps {
   params: { category: string; product: string }
@@ -30,7 +31,14 @@ export default async function Page({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-2xl">
+    <div className="container mx-auto py-10">
+      <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
+        <Link href="/gear" className="hover:underline">Gear Categories</Link>
+        <span>/</span>
+        <Link href={`/gear/${encodeURIComponent(params.category)}`} className="hover:underline capitalize">{params.category}</Link>
+        <span>/</span>
+        <span>{item.name}</span>
+      </nav>
       {item.image_url && (
         <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-6">
           <Image
@@ -55,19 +63,7 @@ export default async function Page({ params }: PageProps) {
           <span className="text-xl font-semibold text-primary">${item.price ?? 'N/A'}</span>
           <span className="text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
         </div>
-        {user ? (
-          <form className="flex flex-col gap-4 bg-primary/5 p-4 rounded-md border mt-6">
-            <h2 className="text-lg font-semibold mb-2 text-primary">Reserve this item</h2>
-            {/* Reservation form fields (e.g., date pickers, quantity) can go here */}
-            <Button type="submit" className="w-full">Reserve</Button>
-          </form>
-        ) : (
-          <div className="mt-6 text-center">
-            <Link href="/auth/sign-in">
-              <Button variant="secondary">Sign in to reserve</Button>
-            </Link>
-          </div>
-        )}
+        <ProductReservationClient user={user} item={item} />
       </div>
     </div>
   )

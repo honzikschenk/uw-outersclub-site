@@ -18,6 +18,9 @@ export default async function Page() {
 
   return (
     <div className="container mx-auto py-10">
+      <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
+        <Link href="/gear" className="hover:underline">Gear Categories</Link>
+      </nav>
       <h1 className="text-4xl font-bold mb-8">Gear Categories</h1>
       {categories && categories.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
