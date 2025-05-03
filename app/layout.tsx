@@ -197,12 +197,6 @@ export default function RootLayout({
                     UW Outers Club &copy; {new Date().getFullYear()}
                   </span>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <ThemeSwitcher />
-                  <Badge className="bg-primary/10 text-primary border border-primary/20">
-                    Get Outside!
-                  </Badge>
-                </div>
               </footer>
             </div>
           </main>
