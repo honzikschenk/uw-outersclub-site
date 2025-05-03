@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default async function Page() {
   const supabase = await createClient()
@@ -31,6 +32,13 @@ export default async function Page() {
                   <CardTitle className="capitalize">{cat.category}</CardTitle>
                 </CardHeader>
                 <CardContent>
+                <Image
+                    src={`/categories/${encodeURIComponent(cat.category)}.jpg`} 
+                    alt={`${cat.category} image`}
+                    width={300}
+                    height={300}
+                    className="w-full h-80 object-cover rounded-t-md mb-4"
+                  />
                   <div className="text-muted-foreground">View all gear in this category</div>
                 </CardContent>
               </Card>
