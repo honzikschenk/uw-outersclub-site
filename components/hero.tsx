@@ -19,7 +19,7 @@ export default function Header() {
         <p className="text-lg mb-8">Join us on our next adventure!</p>
         <Button size="lg">
           <a href="/sign-up" className="flex items-center gap-2">
-            Sign Up
+            Join Us
           </a>
         </Button>
       </div>
