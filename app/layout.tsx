@@ -42,19 +42,6 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const memberPages: { title: string; href: string; description: string }[] = [
-  {
-    title: "Reserve Gear",
-    href: "/member/reserve",
-    description: "Reserve gear for your next adventure",
-  },
-  {
-    title: "My Rentals",
-    href: "/member/rentals",
-    description: "View your current rentals",
-  },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -91,42 +78,9 @@ export default function RootLayout({
                     <a href="/gear" className="hover:text-primary">
                       Gear Rental
                     </a>
-                    <div className="relative group">
-                      <a
-                        href="/member"
-                        className="hover:text-primary flex items-center gap-1"
-                      >
-                        Members
-                        <svg
-                          className="w-4 h-4 transition-transform group-hover:rotate-180"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </a>
-                      <div className="absolute left-0 mt-2 hidden group-hover:block bg-white shadow-lg rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out transform group-hover:translate-y-1">
-                        <ul className="py-2">
-                          {memberPages.map((memberPage) => (
-                            <li key={memberPage.href}>
-                              <Link
-                                href={memberPage.href}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              >
-                                {memberPage.title}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                    <a href="/member" className="hober:text-primary">
+                      Members
+                    </a>
                     <a href="/events" className="hover:text-primary">
                       Events/Trips
                     </a>
