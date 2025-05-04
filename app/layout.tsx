@@ -131,9 +131,7 @@ export default function RootLayout({
                         <a href="/contact" className="hover:text-primary">
                           Contact
                         </a>
-                        <SheetClose asChild>
-                          {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
-                        </SheetClose>
+                        {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
                       </div>
                     </SheetContent>
                   </Sheet>
