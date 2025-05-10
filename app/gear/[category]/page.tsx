@@ -3,16 +3,18 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import Image from 'next/image'
 import Link from 'next/link'
 
-interface PageProps {
-  params: { category: string }
-}
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}) {
+  const { category } = await params
 
-export default async function Page({ params }: PageProps) {
   const supabase = await createClient()
   const { data: items, error } = await supabase
     .from('Gear')
     .select('*')
-    .eq('category', params.category)
+    .eq('category', category)
 
   if (error) {
     return <div className="p-8 text-red-600">Error loading gear: {error.message}</div>
@@ -23,14 +25,14 @@ export default async function Page({ params }: PageProps) {
       <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
         <Link href="/gear" className="hover:underline">Gear Categories</Link>
         <span>/</span>
-        <span className="capitalize">{params.category}</span>
+        <span className="capitalize">{category}</span>
       </nav>
-      <h1 className="text-4xl font-bold mb-8 capitalize">{params.category}</h1>
+      <h1 className="text-4xl font-bold mb-8 capitalize">{category}</h1>
       {items && items.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {items.map((item) => (
             <Card key={item.id} className="shadow-md transition-transform hover:scale-105">
-              <a href={`/gear/${params.category}/${item.id}`} className="block">
+              <a href={`/gear/${category}/${item.id}`} className="block">
             <CardHeader>
               <CardTitle>{item.name}</CardTitle>
             </CardHeader>

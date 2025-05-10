@@ -4,18 +4,20 @@ import Image from 'next/image'
 import Link from 'next/link'
 import ProductReservationClient from './ProductReservationClient'
 
-interface PageProps {
-  params: { category: string; product: string }
-}
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ category: string, product: string }>;
+}) {
+  const { category, product } = await params
 
-export default async function Page({ params }: PageProps) {
   const supabase = await createClient()
   // Fetch product details
   const { data: items, error } = await supabase
     .from('Gear')
     .select('*')
-    .eq('category', params.category)
-    .eq('id', params.product)
+    .eq('category', category)
+    .eq('id', product)
     .limit(1)
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,7 +37,7 @@ export default async function Page({ params }: PageProps) {
       <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
         <Link href="/gear" className="hover:underline">Gear Categories</Link>
         <span>/</span>
-        <Link href={`/gear/${encodeURIComponent(params.category)}`} className="hover:underline capitalize">{params.category}</Link>
+        <Link href={`/gear/${encodeURIComponent(category)}`} className="hover:underline capitalize">{category}</Link>
         <span>/</span>
         <span>{item.name}</span>
       </nav>
