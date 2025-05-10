@@ -59,7 +59,7 @@ export default function RootLayout({
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
               <header className="bg-background py-4">
-                <div className="container mx-auto flex items-center justify-between">
+                <div className="container mx-auto flex items-center justify-between py-3">
                   <Link
                     href="/"
                     className="flex items-center gap-2 mr-10 max-md:absolute max-md:left-3"
@@ -93,7 +93,7 @@ export default function RootLayout({
                     {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
                   </nav>
                   <Sheet>
-                    <SheetTrigger className={"md:hidden ml-auto"}>
+                    <SheetTrigger className={"md:hidden absolute right-8"}>
                       <Menu />
                     </SheetTrigger>
                     <SheetContent className={"md:hidden"}>

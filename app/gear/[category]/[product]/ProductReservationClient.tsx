@@ -13,7 +13,7 @@ export default function ProductReservationClient({ user, item }: { user: any, it
   if (!user) {
     return (
       <div className="mt-6 text-center">
-        <Link href="/auth/sign-in">
+        <Link href="/sign-in">
           <Button variant="secondary">Sign in to reserve</Button>
         </Link>
       </div>
