@@ -13,6 +13,18 @@ export default function ResourcesPage() {
         <section className="mb-10">
           <Card className="mb-6 w-full md:w-[800px] mx-auto">
             <CardHeader>
+              <CardTitle>Equipment Room Hours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-medium">
+                Tuesdays & Thursdays: 6:30-7:30 pm
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+        <section className="mb-10">
+          <Card className="mb-6 w-full md:w-[800px] mx-auto">
+            <CardHeader>
               <CardTitle>Maps</CardTitle>
               <CardDescription>
                 Access maps for trip planning and navigation.
