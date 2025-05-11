@@ -92,7 +92,7 @@ export default async function Home() {
                     variant="secondary"
                     asChild
                   >
-                    <a href={"/activities"}>View Activities</a>
+                    <a href={"/events"}>View Activities</a>
                   </Button>
                 </CardContent>
               </Card>
