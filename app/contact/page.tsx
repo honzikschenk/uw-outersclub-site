@@ -21,9 +21,6 @@ export default function Contact() {
           <li>
             Our Instagram: <a className="text-green-600 underline" href="https://www.instagram.com/wloo.outersclub" target="_blank" rel="noopener noreferrer">@wloo.outersclub</a>
           </li>
-          <li>
-            Our Facebook group: <a className="text-green-600 underline" href="https://www.facebook.com/groups/uwoutersclub" target="_blank" rel="noopener noreferrer">UW Outers Club</a> (not currently active)
-          </li>
         </ul>
       </section>
       <section>
