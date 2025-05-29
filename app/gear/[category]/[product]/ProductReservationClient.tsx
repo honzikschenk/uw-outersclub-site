@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { reserveGearAction } from '@/app/actions'
 
 export default function ProductReservationClient({
   user,
@@ -28,9 +29,29 @@ export default function ProductReservationClient({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleReserveGear(args: any) {
-    const mod = await import("./reserveGear");
-    return mod.reserveGear(args);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    if (!selectedRange.from || !selectedRange.to) {
+      setError('Please select a valid date range.')
+      return
+    }
+    setLoading(true)
+    const formData = new FormData(e.currentTarget)
+    formData.set('userId', user.id)
+    formData.set('itemId', item.id)
+    formData.set('from', selectedRange.from.toISOString())
+    formData.set('to', selectedRange.to.toISOString())
+    formData.set('quantity', String(quantity))
+    const res = await reserveGearAction(formData)
+    setLoading(false)
+    if (res.error) {
+      setError(res.error)
+    } else {
+      setSuccess('Reservation successful!')
+      router.refresh()
+    }
   }
 
   if (!user) {
@@ -46,30 +67,7 @@ export default function ProductReservationClient({
   return (
     <form
       className="mx-auto w-full max-w-sm bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4 mt-8"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setError(null);
-        setSuccess(null);
-        if (!selectedRange.from || !selectedRange.to) {
-          setError("Please select a valid date range.");
-          return;
-        }
-        setLoading(true);
-        const res = await handleReserveGear({
-          userId: user.id,
-          itemId: item.id,
-          from: selectedRange.from,
-          to: selectedRange.to,
-          quantity,
-        });
-        setLoading(false);
-        if (res.error) {
-          setError(res.error);
-        } else {
-          setSuccess("Reservation successful!");
-          router.refresh();
-        }
-      }}
+      onSubmit={handleSubmit}
     >
       <h2 className="text-lg font-semibold text-primary mb-2 text-center">
         Reserve this item

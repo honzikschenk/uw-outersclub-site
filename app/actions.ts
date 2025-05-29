@@ -4,6 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { reserveGear } from "@/lib/reserveGear";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -132,3 +133,12 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
+export async function reserveGearAction(formData: FormData) {
+  const userId = formData.get("userId") as string;
+  const itemId = formData.get("itemId") as string;
+  const from = new Date(formData.get("from") as string);
+  const to = new Date(formData.get("to") as string);
+  const quantity = Number(formData.get("quantity"));
+  return await reserveGear({ userId, itemId, from, to, quantity });
+}
