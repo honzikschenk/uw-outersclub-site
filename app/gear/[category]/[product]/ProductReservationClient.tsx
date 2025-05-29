@@ -7,7 +7,6 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { reserveGearAction } from '@/app/actions'
@@ -23,7 +22,6 @@ export default function ProductReservationClient({
     from: Date | undefined;
     to: Date | undefined;
   }>({ from: undefined, to: undefined });
-  const [quantity, setQuantity] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +41,6 @@ export default function ProductReservationClient({
     formData.set('itemId', item.id)
     formData.set('from', selectedRange.from.toISOString())
     formData.set('to', selectedRange.to.toISOString())
-    formData.set('quantity', String(quantity))
     const res = await reserveGearAction(formData)
     setLoading(false)
     if (res.error) {
@@ -137,21 +134,6 @@ export default function ProductReservationClient({
             />
           </PopoverContent>
         </Popover>
-      </div>
-      <div className="flex flex-col gap-2">
-        <label htmlFor="quantity" className="text-sm font-medium mb-1">
-          Quantity
-        </label>
-        <Input
-          id="quantity"
-          name="quantity"
-          type="number"
-          min={1}
-          max={item.num_available ?? 1}
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-          className="w-full"
-        />
       </div>
       {error && <div className="text-red-600 text-sm text-center">{error}</div>}
       {success && (

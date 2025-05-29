@@ -139,6 +139,5 @@ export async function reserveGearAction(formData: FormData) {
   const itemId = formData.get("itemId") as string;
   const from = new Date(formData.get("from") as string);
   const to = new Date(formData.get("to") as string);
-  const quantity = Number(formData.get("quantity"));
-  return await reserveGear({ userId, itemId, from, to, quantity });
+  return await reserveGear({ userId, itemId, from, to });
 }

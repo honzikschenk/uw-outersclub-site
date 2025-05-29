@@ -1,12 +1,11 @@
 // Use the server client for server-side usage
 import { supabaseService } from '@/utils/supabase/service'
 
-export async function reserveGear({ userId, itemId, from, to, quantity }: {
+export async function reserveGear({ userId, itemId, from, to }: {
   userId: string,
   itemId: string,
   from: Date,
-  to: Date,
-  quantity: number
+  to: Date
 }) {
   const supabase = supabaseService
 
@@ -39,9 +38,26 @@ export async function reserveGear({ userId, itemId, from, to, quantity }: {
       gear_id: itemId,
       lent_date: from.toISOString(),
       due_date: to.toISOString(),
-      quantity,
     })
 
   if (insertError) return { error: 'Could not reserve item.' }
+
+  // 4. Decrement num_available in Gear
+  const { data: gear } = await supabase
+    .from('Gear')
+    .select('num_available')
+    .eq('id', itemId)
+    .single()
+  let updateError;
+  if (gear && gear.num_available > 0) {
+    const { error } = await supabase
+      .from('Gear')
+      .update({ num_available: gear.num_available - 1 })
+      .eq('id', itemId);
+    updateError = error;
+  }
+
+  if (updateError) return { error: 'Reservation made, but failed to update available amount.' }
+  
   return { success: true }
 }
