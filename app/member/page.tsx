@@ -31,6 +31,20 @@ export default async function MemberDashboard() {
     return <div className="container mx-auto py-10"><div className="p-8 text-red-600">Error loading lent items: {error.message}</div></div>
   }
 
+  // If the user already has a lent item, fetch its gear name
+  let gearName = '?'
+  if (lentItems && lentItems.length > 0) {
+    const { data: gear, error: gearError } = await supabase
+      .from('Gear')
+      .select('id, name')
+      .eq('id', lentItems[0].gear_id)
+      .single()
+    if (gearError) {
+      return <div className="container mx-auto py-10"><div className="p-8 text-red-600">Error loading lent items: {gearError.message}</div></div>
+    }
+    gearName = gear.name
+  }
+
   return (
     <div className="container mx-auto py-10">
       <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
@@ -56,10 +70,7 @@ export default async function MemberDashboard() {
                 return (
                   <tr key={item.id} className={isOverdue ? 'bg-red-100' : ''}>
                     <td className="px-4 py-2 flex items-center gap-3">
-                      {item.Gear?.image_url && (
-                        <img src={item.Gear.image_url} alt={item.Gear.name} className="w-12 h-12 object-cover rounded" />
-                      )}
-                      <span>{item.Gear?.name || item.gear_id}</span>
+                      <span>{gearName}</span>
                     </td>
                     <td className="px-4 py-2">{item.lent_date ? new Date(item.lent_date).toLocaleDateString() : '-'}</td>
                     <td className="px-4 py-2">{due ? due.toLocaleDateString() : '-'}</td>
