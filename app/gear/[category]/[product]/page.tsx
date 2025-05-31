@@ -62,7 +62,7 @@ export default async function Page({
           {item.description}
         </div>
         <div className="flex items-center gap-6 mb-6">
-          <span className="text-xl font-semibold text-primary">${item.price ?? 'N/A'}</span>
+          <span className="text-xl font-semibold text-primary">From ${item.price_tu_th ?? 'N/A'}</span>
           <span className="text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
         </div>
         <ProductReservationClient user={user} item={item} />
