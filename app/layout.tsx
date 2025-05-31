@@ -64,7 +64,7 @@ export default function RootLayout({
                 <div className="container mx-auto flex items-center justify-between py-3">
                   <Link
                     href="/"
-                    className="flex items-center gap-2 mr-10 max-md:absolute max-md:left-3"
+                    className="flex items-center gap-2 mr-10 max-lg:absolute max-lg:left-3"
                   >
                     <img
                       src="/logo.jpg"
@@ -73,14 +73,14 @@ export default function RootLayout({
                     />
                   </Link>
 
-                  <nav className="hidden md:flex items-center space-x-6">
+                  <nav className="hidden lg:flex items-center space-x-6">
                     <a href="/about" className="hover:text-primary">
                       About
                     </a>
                     <a href="/gear" className="hover:text-primary">
                       Gear Rental
                     </a>
-                    <a href="/member" className="hober:text-primary">
+                    <a href="/member" className="hover:text-primary">
                       Members
                     </a>
                     <a href="/events" className="hover:text-primary">
@@ -95,10 +95,10 @@ export default function RootLayout({
                     {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
                   </nav>
                   <Sheet>
-                    <SheetTrigger className={"md:hidden absolute right-8"}>
+                    <SheetTrigger className={"lg:hidden absolute right-8"}>
                       <Menu />
                     </SheetTrigger>
-                    <SheetContent className={"md:hidden"}>
+                    <SheetContent className={"lg:hidden"}>
                       <a href="/">
                         <SheetHeader className="mb-10">
                           <SheetTitle>
@@ -139,7 +139,7 @@ export default function RootLayout({
                   </Sheet>
                 </div>
               </header>
-              <div className="flex flex-col w-full">{children}</div>
+              <div className="flex flex-col w-full min-h-screen">{children}</div>
               <footer className="w-full flex flex-col items-center justify-center border-t border-border bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 mx-auto text-center text-xs gap-2 py-8 mt-10 shadow-inner">
                 <div className="flex items-center gap-2">
                   <img
