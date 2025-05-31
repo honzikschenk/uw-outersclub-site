@@ -30,7 +30,16 @@ export async function reserveGear({ userId, itemId, from, to }: {
   if (lentError) return { error: 'Could not check active rentals.' }
   if (activeLent && activeLent.length > 0) return { error: 'You already have an item rented.' }
 
-  // 3. Insert reservation (assume 'Lent' table)
+  // 3. Check if item is available
+  const { data: gears, error: gearError } = await supabase
+    .from('Gear')
+    .select('num_available')
+    .eq('id', itemId)
+    .single()
+  if (gearError) return { error: 'Could not check item availability.' }
+  if (!gears || gears.num_available <= 0) return { error: 'Item is not available for reservation.' }
+
+  // 4. Insert reservation (assume 'Lent' table)
   const { error: insertError } = await supabase
     .from('Lent')
     .insert({
@@ -42,7 +51,7 @@ export async function reserveGear({ userId, itemId, from, to }: {
 
   if (insertError) return { error: 'Could not reserve item.' }
 
-  // 4. Decrement num_available in Gear
+  // 5. Decrement num_available in Gear
   const { data: gear } = await supabase
     .from('Gear')
     .select('num_available')
