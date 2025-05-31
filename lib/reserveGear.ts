@@ -9,6 +9,9 @@ export async function reserveGear({ userId, itemId, from, to }: {
 }) {
   const supabase = supabaseService
 
+  // Use the provided from/to dates directly
+  if (!from || !to) return { error: 'Could not determine rental period.' }
+
   // 1. Check if user has an active membership
   const { data: memberships, error: membershipError } = await supabase
     .from('Membership')

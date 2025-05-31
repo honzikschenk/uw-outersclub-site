@@ -61,8 +61,11 @@ export default async function Page({
         <div className="mb-2 text-lg text-gray-700 leading-relaxed">
           {item.description}
         </div>
-        <div className="flex items-center gap-6 mb-6">
-          <span className="text-xl font-semibold text-primary">From ${item.price_tu_th ?? 'N/A'}</span>
+        <div className="flex flex-col gap-2 mb-6">
+          <span className="text-xl font-semibold text-primary">Rental Prices:</span>
+          <span className="text-base text-gray-700">Tuesday–Thursday: ${item.price_tu_th ?? 'N/A'}</span>
+          <span className="text-base text-gray-700">Thursday–Tuesday: ${item.price_th_tu ?? 'N/A'}</span>
+          <span className="text-base text-gray-700">Full Week: ${item.price_week ?? 'N/A'}</span>
           <span className="text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
         </div>
         <ProductReservationClient user={user} item={item} />
