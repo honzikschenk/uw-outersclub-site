@@ -62,53 +62,48 @@ export default function ProductReservationClient({
 	user: any;
 	item: any;
 }) {
-	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-	const [selectedOption, setSelectedOption] = useState<string | null>(null);
+	const [selectedRange, setSelectedRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const router = useRouter();
 
-	// Determine which rental options are valid for the selected date
-	let validOptions = RENTAL_OPTIONS;
-	if (selectedDate) {
-		const day = selectedDate.getDay();
-		if (day === 2) {
-			// Tuesday: allow tu_th and week
-			validOptions = RENTAL_OPTIONS.filter(opt => opt.value === 'tu_th' || opt.value === 'week');
-		} else if (day === 4) {
-			// Thursday: allow th_tu and week
-			validOptions = RENTAL_OPTIONS.filter(opt => opt.value === 'th_tu' || opt.value === 'week');
-		} else {
-			validOptions = [];
-		}
+	// Helper to check if a range is valid and get price key
+	function getRentalTypeAndPrice(range: { from: Date | null; to: Date | null }) {
+		if (!range.from || !range.to) return { type: null, priceKey: null };
+		const from = range.from;
+		const to = range.to;
+		const dayFrom = from.getDay();
+		const dayTo = to.getDay();
+		const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+		// Tuesday to Thursday
+		if (dayFrom === 2 && dayTo === 4 && diff === 2) return { type: 'tu_th', priceKey: 'price_tu_th' };
+		// Thursday to Tuesday
+		if (dayFrom === 4 && dayTo === 2 && diff === 5) return { type: 'th_tu', priceKey: 'price_th_tu' };
+		// Tuesday to next Tuesday
+		if (dayFrom === 2 && dayTo === 2 && diff === 7) return { type: 'week', priceKey: 'price_week' };
+		// Thursday to next Thursday
+		if (dayFrom === 4 && dayTo === 4 && diff === 7) return { type: 'week', priceKey: 'price_week' };
+		return { type: null, priceKey: null };
 	}
+
+	const { type: rentalType, priceKey } = getRentalTypeAndPrice(selectedRange);
+	const price = priceKey ? item[priceKey] ?? 'N/A' : null;
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setError(null);
 		setSuccess(null);
-		if (!selectedDate || !selectedOption) {
-			setError('Please select a valid start date and rental period.');
+		if (!selectedRange.from || !selectedRange.to || !rentalType) {
+			setError('Please select a valid rental period.');
 			return;
-		}
-		// Calculate from/to based on selected date and option
-		let from = new Date(selectedDate);
-		let to = new Date(selectedDate);
-		if (selectedOption === 'tu_th') {
-			to.setDate(from.getDate() + 2);
-		} else if (selectedOption === 'th_tu') {
-			to.setDate(from.getDate() + 5);
-		} else if (selectedOption === 'week') {
-			to.setDate(from.getDate() + 7);
 		}
 		setLoading(true);
 		const formData = new FormData(e.currentTarget);
 		formData.set('userId', user.id);
 		formData.set('itemId', item.id);
-		formData.set('from', from.toISOString());
-		formData.set('to', to.toISOString());
-		formData.set('rentalType', selectedOption);
+		formData.set('from', selectedRange.from.toISOString());
+		formData.set('to', selectedRange.to.toISOString());
 		const res = await reserveGearAction(formData);
 		setLoading(false);
 		if (res.error) {
@@ -129,13 +124,6 @@ export default function ProductReservationClient({
 		);
 	}
 
-	// Determine price
-	let price = 'N/A';
-	if (selectedOption) {
-		const opt = RENTAL_OPTIONS.find(o => o.value === selectedOption);
-		price = item[opt?.priceKey ?? 'price_tu_th'] ?? 'N/A';
-	}
-
 	return (
 		<form
 			className="mx-auto w-full max-w-sm bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4 mt-8"
@@ -145,65 +133,82 @@ export default function ProductReservationClient({
 				Reserve this item
 			</h2>
 			<div className="flex flex-col gap-2">
-				<label className="text-sm font-medium mb-1">Start Date (Tuesday or Thursday)</label>
+				<label className="text-sm font-medium mb-1">Select Rental Period (Tuesday–Thursday, Thursday–Tuesday, or a full week)</label>
 				<Calendar
-					mode="single"
-					selected={selectedDate ?? undefined}
-					onSelect={date => {
-						setSelectedDate(date ?? null);
-						setSelectedOption(null);
+					mode="range"
+					selected={{ from: selectedRange.from ?? undefined, to: selectedRange.to ?? undefined }}
+					onSelect={(range: { from?: Date; to?: Date } | undefined) => {
+						setError(null);
+						if (!range?.from) {
+							setSelectedRange({ from: null, to: null });
+							return;
+						}
+						// If user picks a single date, just set from
+						if (!range.to) {
+							setSelectedRange({ from: range.from, to: null });
+							return;
+						}
+						// Only allow valid ranges
+						const { type } = getRentalTypeAndPrice({ from: range.from, to: range.to });
+						if (type) {
+							setSelectedRange({ from: range.from, to: range.to });
+						} else {
+							setSelectedRange({ from: range.from, to: null });
+							setError('Please select a valid rental period: Tuesday–Thursday, Thursday–Tuesday, or a full week.');
+						}
 					}}
-					disabled={date => {
+					disabled={(date: Date) => {
 						const today = new Date();
 						today.setHours(0,0,0,0);
-						return !date || date < today || (date.getDay() !== 2 && date.getDay() !== 4);
+						// Only allow picking a start date that is a Tuesday or Thursday in the future
+						// and only allow picking an end date that matches a valid rental period
+						if (!selectedRange.from) {
+							// Only allow picking a start date that is a future Tuesday or Thursday
+							return !date || date < today || (date.getDay() !== 2 && date.getDay() !== 4);
+						} else {
+							// If a start date is picked, only allow valid end dates
+							const from = selectedRange.from;
+							const dayFrom = from.getDay();
+							const diff = Math.round((date.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+							// Tuesday to Thursday
+							if (dayFrom === 2 && date.getDay() === 4 && diff === 2) return false;
+							// Thursday to Tuesday
+							if (dayFrom === 4 && date.getDay() === 2 && diff === 5) return false;
+							// Tuesday to next Tuesday
+							if (dayFrom === 2 && date.getDay() === 2 && diff === 7) return false;
+							// Thursday to next Thursday
+							if (dayFrom === 4 && date.getDay() === 4 && diff === 7) return false;
+							// Otherwise, disable
+							return true;
+						}
 					}}
 					initialFocus
 				/>
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-2 w-fit self-end"
+					onClick={() => setSelectedRange({ from: null, to: null })}
+					disabled={!selectedRange.from && !selectedRange.to}
+				>
+					Clear selection
+				</Button>
 			</div>
-			{selectedDate && (
-				<div className="flex flex-col gap-2">
-					<label className="text-sm font-medium mb-1">Rental Period</label>
-					<select
-						className="border rounded px-3 py-2"
-						value={selectedOption ?? ''}
-						onChange={e => setSelectedOption(e.target.value)}
-						aria-label="Rental Period"
-						title="Rental Period"
-					>
-						<option value="" disabled>Select rental period</option>
-						{validOptions.map(opt => (
-							<option key={opt.value} value={opt.value}>{opt.label}</option>
-						))}
-					</select>
-				</div>
-			)}
-			{selectedOption && (
+			{rentalType && price && (
 				<div className="text-base text-gray-700">
 					Price: <span className="font-semibold">${price}</span>
 				</div>
 			)}
-			{selectedDate && selectedOption && (() => {
-  let from = new Date(selectedDate);
-  let to = new Date(selectedDate);
-  if (selectedOption === 'tu_th') {
-    to.setDate(from.getDate() + 2);
-  } else if (selectedOption === 'th_tu') {
-    to.setDate(from.getDate() + 5);
-  } else if (selectedOption === 'week') {
-    to.setDate(from.getDate() + 7);
-  }
-  return (
-    <div className="bg-green-50 border border-green-300 rounded p-3 text-green-900 text-center font-medium">
-      Rental period: <span className="font-bold">{from.toLocaleDateString()}</span> to <span className="font-bold">{to.toLocaleDateString()}</span>
-    </div>
-  );
-})()}
+			{selectedRange.from && selectedRange.to && rentalType && (
+				<div className="bg-green-50 border border-green-300 rounded p-3 text-green-900 text-center font-medium">
+					Rental period: <span className="font-bold">{selectedRange.from.toLocaleDateString()}</span> to <span className="font-bold">{selectedRange.to.toLocaleDateString()}</span>
+				</div>
+			)}
 			{error && <div className="text-red-600 text-sm text-center">{error}</div>}
 			{success && (
 				<div className="text-green-600 text-sm text-center">{success}</div>
 			)}
-			<Button type="submit" className="w-full mt-2" disabled={loading || !selectedDate || !selectedOption}>
+			<Button type="submit" className="w-full mt-2" disabled={loading || !selectedRange.from || !selectedRange.to || !rentalType}>
 				{loading ? "Reserving..." : "Reserve"}
 			</Button>
 		</form>
