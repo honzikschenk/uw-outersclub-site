@@ -109,7 +109,7 @@ export default function ProductReservationClient({
 		if (res.error) {
 			setError(res.error);
 		} else {
-			setSuccess('Reservation successful!');
+			setSuccess('Reservation successful! Please pay when picking up the item.');
 			router.refresh();
 		}
 	};

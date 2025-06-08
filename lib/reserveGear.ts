@@ -57,14 +57,31 @@ export async function reserveGear({ userId, itemId, from, to }: {
   // 5. Decrement num_available in Gear
   const { data: gear } = await supabase
     .from('Gear')
-    .select('num_available')
+    .select('total_times_rented, revenue_generated, price_week, price_tu_th, price_th_tu')
     .eq('id', itemId)
     .single()
   let updateError;
-  if (gear && gear.num_available > 0) {
+  if (gear) {
+    // Calculate price based on rental period
+    let price = 0;
+    const msInDay = 24 * 60 * 60 * 1000;
+    const startDay = from.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const days = Math.ceil((to.getTime() - from.getTime()) / msInDay);
+
+    if (days >= 7) {
+      price = gear.price_week;
+    } else if (startDay === 2 && days === 2) { // Tuesday (2) to Thursday (4)
+      price = gear.price_tu_th;
+    } else if (startDay === 4 && days === 5) { // Thursday (4) to Tuesday (2)
+      price = gear.price_th_tu;
+    }
+
     const { error } = await supabase
       .from('Gear')
-      .update({ num_available: gear.num_available - 1 })
+      .update({
+      total_times_rented: gear.total_times_rented + 1,
+      revenue_generated: gear.revenue_generated + price
+      })
       .eq('id', itemId);
     updateError = error;
   }
