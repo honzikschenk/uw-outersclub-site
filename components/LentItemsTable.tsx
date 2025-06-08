@@ -4,12 +4,12 @@ import React from "react";
 
 interface LentItemsTableProps {
   lentItems: any[];
-  gearName: string;
+  gearMap: Record<string, string>;
 }
 
 export default function LentItemsTable({
   lentItems,
-  gearName,
+  gearMap,
 }: LentItemsTableProps) {
   return (
     <Card className="overflow-x-auto p-0">
@@ -41,7 +41,7 @@ export default function LentItemsTable({
                 className={status === "Past Due" ? "bg-red-100" : ""}
               >
                 <td className="px-4 py-2 flex items-center gap-3">
-                  <span>{gearName}</span>
+                  <span>{gearMap[item.gear_id] || item.gear_id || "?"}</span>
                 </td>
                 <td className="px-4 py-2">
                   {item.lent_date

@@ -84,6 +84,24 @@ export default async function MemberDashboard() {
     );
   }
 
+  // Fetch all gear names for user's lent items
+  let gearMap: Record<string, string> = {};
+  if (lentItems && lentItems.length > 0) {
+    const gearIds = Array.from(new Set(lentItems.map((item: any) => item.gear_id).filter(Boolean)));
+    if (gearIds.length > 0) {
+      const { data: gearRows } = await supabase
+        .from("Gear")
+        .select("id, name")
+        .in("id", gearIds);
+      if (gearRows) {
+        gearMap = gearRows.reduce((acc: Record<string, string>, g: any) => {
+          acc[g.id] = g.name;
+          return acc;
+        }, {});
+      }
+    }
+  }
+
   // Fetch admin status
   const isAdmin = memberships && memberships.admin;
 
@@ -109,25 +127,6 @@ export default async function MemberDashboard() {
     allMembersError = membersErr;
   }
 
-  let gearName = "?";
-  if (lentItems && lentItems.length > 0) {
-    const { data: gear, error: gearError } = await supabase
-      .from("Gear")
-      .select("id, name")
-      .eq("id", lentItems[0].gear_id)
-      .single();
-    if (gearError) {
-      return (
-        <div className="container mx-auto py-10">
-          <div className="p-8 text-red-600">
-            Error loading lent items: {gearError.message}
-          </div>
-        </div>
-      );
-    }
-    gearName = gear.name;
-  }
-
   return (
     <div className="container mx-auto py-10">
       <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
@@ -137,7 +136,7 @@ export default async function MemberDashboard() {
       </nav>
       <h1 className="text-4xl font-bold mb-8">My Lent Items</h1>
       {lentItems && lentItems.length > 0 ? (
-        <LentItemsTable lentItems={lentItems} gearName={gearName} />
+        <LentItemsTable lentItems={lentItems} gearMap={gearMap} />
       ) : (
         <p className="p-8 text-muted-foreground text-center">
           You have no items currently checked out.
