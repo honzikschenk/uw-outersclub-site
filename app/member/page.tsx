@@ -1,6 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import React, { useState } from 'react';
+import AdminSpreadsheet from "@/components/AdminSpreadsheet";
+import LentItemsTable from "@/components/LentItemsTable";
 
 export default async function MemberDashboard() {
   const supabase = await createClient();
@@ -81,7 +84,25 @@ export default async function MemberDashboard() {
     );
   }
 
-  // If the user already has a lent item, fetch its gear name
+  // Fetch admin status
+  const isAdmin = memberships && memberships.admin;
+
+  // Fetch all lent items and all members if admin
+  let allLentItems: any[] = [];
+  let allMembers: any[] = [];
+  let allLentError: any = null;
+  let allMembersError: any = null;
+  if (isAdmin) {
+    const [{ data: lent, error: lentErr }, { data: members, error: membersErr }] = await Promise.all([
+      supabase.from("Lent").select("id, lent_date, due_date, gear_id, user_id").order("due_date", { ascending: true }),
+      supabase.from("Membership").select("joined_on, user_id, valid, admin")
+    ]);
+    allLentItems = lent || [];
+    allMembers = members || [];
+    allLentError = lentErr;
+    allMembersError = membersErr;
+  }
+
   let gearName = "?";
   if (lentItems && lentItems.length > 0) {
     const { data: gear, error: gearError } = await supabase
@@ -110,61 +131,33 @@ export default async function MemberDashboard() {
       </nav>
       <h1 className="text-4xl font-bold mb-8">My Lent Items</h1>
       {lentItems && lentItems.length > 0 ? (
-        <Card className="overflow-x-auto p-0">
-          <table className="min-w-full bg-white rounded">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left">Item</th>
-                <th className="px-4 py-2 text-left">Lent Date</th>
-                <th className="px-4 py-2 text-left">Due Date</th>
-                <th className="px-4 py-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lentItems.map((item: any) => {
-                const lent = item.lent_date ? new Date(item.lent_date) : null;
-                const due = item.due_date ? new Date(item.due_date) : null;
-                const now = new Date();
-                let status = '';
-                if (lent && lent > now) {
-                  status = 'Reserved';
-                } else if (due && due < now) {
-                  status = 'Past Due';
-                } else {
-                  status = 'On Loan';
-                }
-                return (
-                  <tr key={item.id} className={status === 'Past Due' ? "bg-red-100" : ""}>
-                    <td className="px-4 py-2 flex items-center gap-3">
-                      <span>{gearName}</span>
-                    </td>
-                    <td className="px-4 py-2">
-                      {item.lent_date
-                        ? new Date(item.lent_date).toLocaleDateString()
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-2">
-                      {due ? due.toLocaleDateString() : "-"}
-                    </td>
-                    <td className="px-4 py-2 font-semibold">
-                      {status === 'Past Due' ? (
-                        <span className="text-red-600">Past Due</span>
-                      ) : status === 'Reserved' ? (
-                        <span className="text-lime-600">Reserved</span>
-                      ) : (
-                        "On Loan"
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+        <LentItemsTable lentItems={lentItems} gearName={gearName} />
       ) : (
         <p className="p-8 text-muted-foreground text-center">
           You have no items currently checked out.
         </p>
+      )}
+
+      {/* Admin spreadsheets */}
+      {isAdmin && (
+        <div className="mt-12 space-y-12">
+          {/* Lent Items Spreadsheet */}
+          <AdminSpreadsheet
+            title="Lent Items"
+            columns={["lent_date", "due_date", "gear_id", "user_id"]}
+            data={allLentItems}
+            error={allLentError}
+            tableName="Lent"
+          />
+          {/* Members Spreadsheet */}
+          <AdminSpreadsheet
+            title="Memberships"
+            columns={["joined_on", "user_id", "valid", "admin"]}
+            data={allMembers}
+            error={allMembersError}
+            tableName="Membership"
+          />
+        </div>
       )}
     </div>
   );
