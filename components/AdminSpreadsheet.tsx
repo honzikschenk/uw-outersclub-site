@@ -188,6 +188,15 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
           </tbody>
         </table>
       )}
+      <div className="flex justify-end p-4">
+        <button
+          className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-6 rounded shadow"
+          onClick={() => {/* TODO: Implement backend update logic here */}}
+          type="button"
+        >
+          Submit Changes
+        </button>
+      </div>
     </Card>
   );
 }
