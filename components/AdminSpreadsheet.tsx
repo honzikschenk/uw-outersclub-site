@@ -25,6 +25,7 @@ export default function AdminSpreadsheet({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
   const [originalRows, setOriginalRows] = useState<any[]>(data || []);
+  const [editedRowIndices, setEditedRowIndices] = useState<Set<number>>(new Set());
 
   // Fetch gear names and user names for mapping
   useEffect(() => {
@@ -91,7 +92,37 @@ export default function AdminSpreadsheet({
       idx === rowIdx ? { ...row, [col]: parsedValue } : row
     );
     setRows(updated);
-    // TODO: Add backend update logic here
+    // Mark as edited if changed from original
+    const original = originalRows[rowIdx];
+    let isEdited = false;
+    if (original) {
+      for (const key of columns) {
+        if (updated[rowIdx][key] !== original[key]) {
+          isEdited = true;
+          break;
+        }
+      }
+    }
+    setEditedRowIndices(prev => {
+      const newSet = new Set(prev);
+      if (isEdited) {
+        newSet.add(rowIdx);
+      } else {
+        newSet.delete(rowIdx);
+      }
+      return newSet;
+    });
+  };
+
+  const handleUndoEdit = (rowIdx: number) => {
+    setRows(rows => rows.map((row, idx) =>
+      idx === rowIdx ? { ...originalRows[rowIdx] } : row
+    ));
+    setEditedRowIndices(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(rowIdx);
+      return newSet;
+    });
   };
 
   const handleDelete = (rowIdx: number) => {
@@ -356,39 +387,62 @@ export default function AdminSpreadsheet({
               {tableName === "Lent" && (
                 <th className="px-4 py-2 text-left">Status</th>
               )}
+              {/* Add edit/undo column */}
+              <th className="px-4 py-2 text-left">{`Undo`}</th>
               {tableName === "Lent" && (
                 <th className="px-4 py-2 text-left">Delete</th>
               )}
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row, rowIdx) => (
-              <tr
-                key={row.id || rowIdx}
-                className={`transition-colors hover:bg-gray-100 ${deletedRows.has(rowIdx) ? 'bg-red-50 opacity-60 line-through' : ''}`}
-              >
-                {columns.map(col => (
-                  <td key={col} className="px-4 py-2">
-                    {renderCell(row, rowIdx, col)}
+            {sortedRows.map((row, rowIdx) => {
+              // Find the index in the original unsorted rows
+              const origIdx = rows.findIndex(r => r.id === row.id);
+              const isEdited = editedRowIndices.has(origIdx);
+              const isDeleted = deletedRows.has(origIdx);
+              return (
+                <tr
+                  key={row.id || rowIdx}
+                  className={`transition-colors hover:bg-gray-100 ${isDeleted ? 'bg-red-50 opacity-60 line-through' : isEdited ? 'bg-yellow-50' : ''}`}
+                >
+                  {columns.map(col => (
+                    <td key={col} className="px-4 py-2">
+                      {renderCell(row, origIdx, col)}
+                    </td>
+                  ))}
+                  {tableName === 'Lent' && (
+                    <td className="px-4 py-2">{renderCell(row, origIdx, 'status')}</td>
+                  )}
+                  {/* Edit/Undo button */}
+                  <td className="px-4 py-2">
+                    {isEdited ? (
+                      <button
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1 rounded"
+                        onClick={() => handleUndoEdit(origIdx)}
+                        type="button"
+                        title="Undo edits to this row"
+                      >
+                        Undo Edit
+                      </button>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
-                ))}
-                {tableName === 'Lent' && (
-                  <>
-                    <td className="px-4 py-2">{renderCell(row, rowIdx, 'status')}</td>
+                  {tableName === 'Lent' && (
                     <td className="px-4 py-2">
                       <button
-                        className={`font-semibold px-3 py-1 rounded ${deletedRows.has(rowIdx) ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
-                        onClick={() => handleDelete(rowIdx)}
+                        className={`font-semibold px-3 py-1 rounded ${isDeleted ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
+                        onClick={() => handleDelete(origIdx)}
                         type="button"
-                        title={deletedRows.has(rowIdx) ? 'Undo delete' : 'Delete row'}
+                        title={isDeleted ? 'Undo delete' : 'Delete row'}
                       >
-                        {deletedRows.has(rowIdx) ? 'Undo' : 'Delete'}
+                        {isDeleted ? 'Undo' : 'Delete'}
                       </button>
                     </td>
-                  </>
-                )}
-              </tr>
-            ))}
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
