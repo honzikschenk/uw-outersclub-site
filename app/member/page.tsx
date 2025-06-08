@@ -122,11 +122,19 @@ export default async function MemberDashboard() {
             </thead>
             <tbody>
               {lentItems.map((item: any) => {
+                const lent = item.lent_date ? new Date(item.lent_date) : null;
                 const due = item.due_date ? new Date(item.due_date) : null;
                 const now = new Date();
-                const isOverdue = due && due < now;
+                let status = '';
+                if (lent && lent > now) {
+                  status = 'Reserved';
+                } else if (due && due < now) {
+                  status = 'Past Due';
+                } else {
+                  status = 'On Loan';
+                }
                 return (
-                  <tr key={item.id} className={isOverdue ? "bg-red-100" : ""}>
+                  <tr key={item.id} className={status === 'Past Due' ? "bg-red-100" : ""}>
                     <td className="px-4 py-2 flex items-center gap-3">
                       <span>{gearName}</span>
                     </td>
@@ -139,8 +147,10 @@ export default async function MemberDashboard() {
                       {due ? due.toLocaleDateString() : "-"}
                     </td>
                     <td className="px-4 py-2 font-semibold">
-                      {isOverdue ? (
+                      {status === 'Past Due' ? (
                         <span className="text-red-600">Past Due</span>
+                      ) : status === 'Reserved' ? (
+                        <span className="text-lime-600">Reserved</span>
                       ) : (
                         "On Loan"
                       )}
