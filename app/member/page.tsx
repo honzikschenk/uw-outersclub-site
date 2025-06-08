@@ -152,7 +152,7 @@ export default async function MemberDashboard() {
           {/* Members Spreadsheet */}
           <AdminSpreadsheet
             title="Memberships"
-            columns={["joined_on", "user_id", "valid", "admin"]}
+            columns={["user_id", "joined_on", "valid", "admin"]}
             data={allMembers}
             error={allMembersError}
             tableName="Membership"

@@ -13,6 +13,34 @@ interface AdminSpreadsheetProps {
 export default function AdminSpreadsheet({ title, columns, data, error, tableName }: AdminSpreadsheetProps) {
   const [rows, setRows] = useState<any[]>(data || []);
   const [search, setSearch] = useState("");
+  const [gearMap, setGearMap] = useState<Record<string, string>>({});
+  const [userMap, setUserMap] = useState<Record<string, string>>({});
+
+  // Fetch gear names and user names for mapping
+  useEffect(() => {
+    async function fetchMaps() {
+      if ((tableName === "Lent" || tableName === "Membership") && rows.length > 0) {
+        // Get unique user_ids
+        const userIds = Array.from(new Set(rows.map(r => r.user_id).filter(Boolean)));
+        if (userIds.length > 0) {
+          let userRes = await fetch("/api/user-names?ids=" + userIds.join(","));
+          let userData = await userRes.json();
+          setUserMap(userData);
+        }
+        // For Lent, also get gear names
+        if (tableName === "Lent") {
+          const gearIds = Array.from(new Set(rows.map(r => r.gear_id).filter(Boolean)));
+          if (gearIds.length > 0) {
+            let gearRes = await fetch("/api/gear-names?ids=" + gearIds.join(","));
+            let gearData = await gearRes.json();
+            setGearMap(gearData);
+          }
+        }
+      }
+    }
+    fetchMaps();
+    // eslint-disable-next-line
+  }, [rows, tableName]);
 
   useEffect(() => {
     setRows(data || []);
@@ -34,7 +62,20 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
   };
 
   const filteredRows = rows.filter(row =>
-    columns.some(col => String(row[col] ?? '').toLowerCase().includes(search.toLowerCase()))
+    columns.some(col => {
+      // For Lent sheet, allow searching by gear name
+      if (col === 'gear_id' && tableName === 'Lent') {
+        const gearName = gearMap[row.gear_id] || '';
+        return gearName.toLowerCase().includes(search.toLowerCase());
+      }
+      // For user_id, allow searching by user email
+      if (col === 'user_id' && userMap && (tableName === 'Lent' || tableName === 'Membership')) {
+        const userEmail = userMap[row.user_id] || '';
+        return userEmail.toLowerCase().includes(search.toLowerCase());
+      }
+      // Default: search by raw value
+      return String(row[col] ?? '').toLowerCase().includes(search.toLowerCase());
+    })
   );
 
   // Helper to render cell by type
@@ -55,6 +96,14 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
       return (
         <span className={status === 'Past Due' ? 'text-red-600 font-semibold' : status === 'Reserved' ? 'text-lime-600 font-semibold' : ''}>{status}</span>
       );
+    }
+    // Show gear name instead of gear_id
+    if (col === 'gear_id' && tableName === 'Lent') {
+      return <span>{gearMap[row.gear_id] || row.gear_id || '-'}</span>;
+    }
+    // Show user name instead of user_id in Lent or Membership
+    if (col === 'user_id' && userMap && (tableName === 'Lent' || tableName === 'Membership')) {
+      return <span>{userMap[row.user_id] || row.user_id || '-'}</span>;
     }
     // Boolean fields
     if (col === 'valid' || col === 'admin') {
