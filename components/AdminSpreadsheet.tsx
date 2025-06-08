@@ -61,6 +61,12 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
     // TODO: Add backend update logic here
   };
 
+  const handleDelete = (rowIdx: number) => {
+    const updated = rows.filter((_, idx) => idx !== rowIdx);
+    setRows(updated);
+    // TODO: Add backend delete logic here
+  };
+
   const filteredRows = rows.filter(row =>
     columns.some(col => {
       // For Lent sheet, allow searching by gear name
@@ -167,6 +173,8 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
               ))}
               {/* Add status column if Lent sheet */}
               {tableName === 'Lent' && <th className="px-4 py-2 text-left">Status</th>}
+              {/* Add delete column if Lent sheet */}
+              {tableName === 'Lent' && <th className="px-4 py-2 text-left">Delete</th>}
             </tr>
           </thead>
           <tbody>
@@ -179,9 +187,19 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
                 ))}
                 {/* Add status cell if Lent sheet */}
                 {tableName === 'Lent' && (
-                  <td className="px-4 py-2">
-                    {renderCell(row, rowIdx, 'status')}
-                  </td>
+                  <>
+                    <td className="px-4 py-2">{renderCell(row, rowIdx, 'status')}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        className="bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-3 py-1 rounded"
+                        onClick={() => handleDelete(rowIdx)}
+                        type="button"
+                        title="Delete row"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </>
                 )}
               </tr>
             ))}
