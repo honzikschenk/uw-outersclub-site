@@ -141,6 +141,7 @@ export default async function MemberDashboard() {
       {/* Admin spreadsheets */}
       {isAdmin && (
         <div className="mt-12 space-y-12">
+          <h2 className="text-3xl font-bold mb-6">Admin Spreadsheets</h2>
           {/* Lent Items Spreadsheet */}
           <AdminSpreadsheet
             title="Lent Items"
