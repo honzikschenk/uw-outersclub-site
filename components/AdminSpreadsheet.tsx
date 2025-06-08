@@ -15,6 +15,8 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
   const [search, setSearch] = useState("");
   const [gearMap, setGearMap] = useState<Record<string, string>>({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Fetch gear names and user names for mapping
   useEffect(() => {
@@ -45,6 +47,14 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
   useEffect(() => {
     setRows(data || []);
   }, [data]);
+
+  // Set default sort field to the first column
+  useEffect(() => {
+    if (columns.length > 0 && !sortField) {
+      setSortField(columns[0]);
+    }
+    // eslint-disable-next-line
+  }, [columns]);
 
   const handleEdit = (rowIdx: number, col: string, value: any) => {
     let parsedValue = value;
@@ -83,6 +93,33 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
       return String(row[col] ?? '').toLowerCase().includes(search.toLowerCase());
     })
   );
+
+  // Sorting logic
+  const sortedRows = React.useMemo(() => {
+    if (!sortField) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      // For dates, compare as dates
+      if (sortField.includes('date') || sortField.includes('joined_on')) {
+        aVal = aVal ? new Date(aVal).getTime() : 0;
+        bVal = bVal ? new Date(bVal).getTime() : 0;
+      }
+      // For booleans, sort true before false
+      if (typeof aVal === 'boolean' || typeof bVal === 'boolean') {
+        aVal = aVal ? 1 : 0;
+        bVal = bVal ? 1 : 0;
+      }
+      // For strings, compare case-insensitive
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredRows, sortField, sortDirection]);
 
   // Helper to render cell by type
   const renderCell = (row: any, rowIdx: number, col: string) => {
@@ -169,23 +206,38 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
           <thead>
             <tr>
               {columns.map(col => (
-                <th key={col} className="px-4 py-2 text-left capitalize">{col.replace('_', ' ')}</th>
+                <th
+                  key={col}
+                  className="px-4 py-2 text-left capitalize cursor-pointer select-none hover:bg-blue-100 transition-colors group"
+                  onClick={() => {
+                    if (sortField === col) {
+                      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                    } else {
+                      setSortField(col);
+                      setSortDirection('asc');
+                    }
+                  }}
+                  title="Click to sort by this column"
+                >
+                  {col.replace('_', ' ')}
+                  {sortField === col && (
+                    <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </th>
               ))}
               {/* Add status column if Lent sheet */}
               {tableName === 'Lent' && <th className="px-4 py-2 text-left">Status</th>}
-              {/* Add delete column if Lent sheet */}
               {tableName === 'Lent' && <th className="px-4 py-2 text-left">Delete</th>}
             </tr>
           </thead>
           <tbody>
-            {filteredRows.map((row, rowIdx) => (
+            {sortedRows.map((row, rowIdx) => (
               <tr key={row.id || rowIdx}>
                 {columns.map(col => (
                   <td key={col} className="px-4 py-2">
                     {renderCell(row, rowIdx, col)}
                   </td>
                 ))}
-                {/* Add status cell if Lent sheet */}
                 {tableName === 'Lent' && (
                   <>
                     <td className="px-4 py-2">{renderCell(row, rowIdx, 'status')}</td>
