@@ -7,7 +7,10 @@ interface LentItemsTableProps {
   gearName: string;
 }
 
-export default function LentItemsTable({ lentItems, gearName }: LentItemsTableProps) {
+export default function LentItemsTable({
+  lentItems,
+  gearName,
+}: LentItemsTableProps) {
   return (
     <Card className="overflow-x-auto p-0">
       <table className="min-w-full bg-white rounded">
@@ -24,16 +27,19 @@ export default function LentItemsTable({ lentItems, gearName }: LentItemsTablePr
             const lent = item.lent_date ? new Date(item.lent_date) : null;
             const due = item.due_date ? new Date(item.due_date) : null;
             const now = new Date();
-            let status = '';
+            let status = "";
             if (lent && lent > now) {
-              status = 'Reserved';
+              status = "Reserved";
             } else if (due && due < now) {
-              status = 'Past Due';
+              status = "Past Due";
             } else {
-              status = 'On Loan';
+              status = "On Loan";
             }
             return (
-              <tr key={item.id} className={status === 'Past Due' ? "bg-red-100" : ""}>
+              <tr
+                key={item.id}
+                className={status === "Past Due" ? "bg-red-100" : ""}
+              >
                 <td className="px-4 py-2 flex items-center gap-3">
                   <span>{gearName}</span>
                 </td>
@@ -46,9 +52,9 @@ export default function LentItemsTable({ lentItems, gearName }: LentItemsTablePr
                   {due ? due.toLocaleDateString() : "-"}
                 </td>
                 <td className="px-4 py-2 font-semibold">
-                  {status === 'Past Due' ? (
+                  {status === "Past Due" ? (
                     <span className="text-red-600">Past Due</span>
-                  ) : status === 'Reserved' ? (
+                  ) : status === "Reserved" ? (
                     <span className="text-lime-600">Reserved</span>
                   ) : (
                     "On Loan"

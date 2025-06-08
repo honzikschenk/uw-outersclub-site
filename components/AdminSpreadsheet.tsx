@@ -10,20 +10,31 @@ interface AdminSpreadsheetProps {
   tableName: string;
 }
 
-export default function AdminSpreadsheet({ title, columns, data, error, tableName }: AdminSpreadsheetProps) {
+export default function AdminSpreadsheet({
+  title,
+  columns,
+  data,
+  error,
+  tableName,
+}: AdminSpreadsheetProps) {
   const [rows, setRows] = useState<any[]>(data || []);
   const [search, setSearch] = useState("");
   const [gearMap, setGearMap] = useState<Record<string, string>>({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Fetch gear names and user names for mapping
   useEffect(() => {
     async function fetchMaps() {
-      if ((tableName === "Lent" || tableName === "Membership") && rows.length > 0) {
+      if (
+        (tableName === "Lent" || tableName === "Membership") &&
+        rows.length > 0
+      ) {
         // Get unique user_ids
-        const userIds = Array.from(new Set(rows.map(r => r.user_id).filter(Boolean)));
+        const userIds = Array.from(
+          new Set(rows.map((r) => r.user_id).filter(Boolean))
+        );
         if (userIds.length > 0) {
           let userRes = await fetch("/api/user-names?ids=" + userIds.join(","));
           let userData = await userRes.json();
@@ -31,9 +42,13 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
         }
         // For Lent, also get gear names
         if (tableName === "Lent") {
-          const gearIds = Array.from(new Set(rows.map(r => r.gear_id).filter(Boolean)));
+          const gearIds = Array.from(
+            new Set(rows.map((r) => r.gear_id).filter(Boolean))
+          );
           if (gearIds.length > 0) {
-            let gearRes = await fetch("/api/gear-names?ids=" + gearIds.join(","));
+            let gearRes = await fetch(
+              "/api/gear-names?ids=" + gearIds.join(",")
+            );
             let gearData = await gearRes.json();
             setGearMap(gearData);
           }
@@ -59,14 +74,19 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
   const handleEdit = (rowIdx: number, col: string, value: any) => {
     let parsedValue = value;
     // Parse boolean fields
-    if (columns.includes(col) && (col === 'valid' || col === 'admin')) {
-      parsedValue = value === 'true' || value === true;
+    if (columns.includes(col) && (col === "valid" || col === "admin")) {
+      parsedValue = value === "true" || value === true;
     }
     // Parse date fields
-    if (columns.includes(col) && (col.includes('date') || col.includes('joined_on'))) {
+    if (
+      columns.includes(col) &&
+      (col.includes("date") || col.includes("joined_on"))
+    ) {
       parsedValue = value; // Already in YYYY-MM-DD format
     }
-    const updated = rows.map((row, idx) => idx === rowIdx ? { ...row, [col]: parsedValue } : row);
+    const updated = rows.map((row, idx) =>
+      idx === rowIdx ? { ...row, [col]: parsedValue } : row
+    );
     setRows(updated);
     // TODO: Add backend update logic here
   };
@@ -77,20 +97,26 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
     // TODO: Add backend delete logic here
   };
 
-  const filteredRows = rows.filter(row =>
-    columns.some(col => {
+  const filteredRows = rows.filter((row) =>
+    columns.some((col) => {
       // For Lent sheet, allow searching by gear name
-      if (col === 'gear_id' && tableName === 'Lent') {
-        const gearName = gearMap[row.gear_id] || '';
+      if (col === "gear_id" && tableName === "Lent") {
+        const gearName = gearMap[row.gear_id] || "";
         return gearName.toLowerCase().includes(search.toLowerCase());
       }
       // For user_id, allow searching by user email
-      if (col === 'user_id' && userMap && (tableName === 'Lent' || tableName === 'Membership')) {
-        const userEmail = userMap[row.user_id] || '';
+      if (
+        col === "user_id" &&
+        userMap &&
+        (tableName === "Lent" || tableName === "Membership")
+      ) {
+        const userEmail = userMap[row.user_id] || "";
         return userEmail.toLowerCase().includes(search.toLowerCase());
       }
       // Default: search by raw value
-      return String(row[col] ?? '').toLowerCase().includes(search.toLowerCase());
+      return String(row[col] ?? "")
+        .toLowerCase()
+        .includes(search.toLowerCase());
     })
   );
 
@@ -101,22 +127,22 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
       let aVal = a[sortField];
       let bVal = b[sortField];
       // For dates, compare as dates
-      if (sortField.includes('date') || sortField.includes('joined_on')) {
+      if (sortField.includes("date") || sortField.includes("joined_on")) {
         aVal = aVal ? new Date(aVal).getTime() : 0;
         bVal = bVal ? new Date(bVal).getTime() : 0;
       }
       // For booleans, sort true before false
-      if (typeof aVal === 'boolean' || typeof bVal === 'boolean') {
+      if (typeof aVal === "boolean" || typeof bVal === "boolean") {
         aVal = aVal ? 1 : 0;
         bVal = bVal ? 1 : 0;
       }
       // For strings, compare case-insensitive
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
+      if (typeof aVal === "string" && typeof bVal === "string") {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   }, [filteredRows, sortField, sortDirection]);
@@ -124,37 +150,51 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
   // Helper to render cell by type
   const renderCell = (row: any, rowIdx: number, col: string) => {
     // Lent status (computed, not editable)
-    if (col === 'status') {
+    if (col === "status") {
       const lent = row.lent_date ? new Date(row.lent_date) : null;
       const due = row.due_date ? new Date(row.due_date) : null;
       const now = new Date();
-      let status = '';
+      let status = "";
       if (lent && lent > now) {
-        status = 'Reserved';
+        status = "Reserved";
       } else if (due && due < now) {
-        status = 'Past Due';
+        status = "Past Due";
       } else {
-        status = 'On Loan';
+        status = "On Loan";
       }
       return (
-        <span className={status === 'Past Due' ? 'text-red-600 font-semibold' : status === 'Reserved' ? 'text-lime-600 font-semibold' : ''}>{status}</span>
+        <span
+          className={
+            status === "Past Due"
+              ? "text-red-600 font-semibold"
+              : status === "Reserved"
+                ? "text-lime-600 font-semibold"
+                : ""
+          }
+        >
+          {status}
+        </span>
       );
     }
     // Show gear name instead of gear_id
-    if (col === 'gear_id' && tableName === 'Lent') {
-      return <span>{gearMap[row.gear_id] || row.gear_id || '-'}</span>;
+    if (col === "gear_id" && tableName === "Lent") {
+      return <span>{gearMap[row.gear_id] || row.gear_id || "-"}</span>;
     }
     // Show user name instead of user_id in Lent or Membership
-    if (col === 'user_id' && userMap && (tableName === 'Lent' || tableName === 'Membership')) {
-      return <span>{userMap[row.user_id] || row.user_id || '-'}</span>;
+    if (
+      col === "user_id" &&
+      userMap &&
+      (tableName === "Lent" || tableName === "Membership")
+    ) {
+      return <span>{userMap[row.user_id] || row.user_id || "-"}</span>;
     }
     // Boolean fields
-    if (col === 'valid' || col === 'admin') {
+    if (col === "valid" || col === "admin") {
       return (
         <select
           className="border rounded px-1 py-0.5 w-full text-sm"
-          value={row[col] === true ? 'true' : row[col] === false ? 'false' : ''}
-          onChange={e => handleEdit(rowIdx, col, e.target.value)}
+          value={row[col] === true ? "true" : row[col] === false ? "false" : ""}
+          onChange={(e) => handleEdit(rowIdx, col, e.target.value)}
           aria-label={col}
         >
           <option value="true">true</option>
@@ -163,15 +203,15 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
       );
     }
     // Date fields
-    if (col.includes('date') || col.includes('joined_on')) {
+    if (col.includes("date") || col.includes("joined_on")) {
       // Accept only date (YYYY-MM-DD)
-      const val = row[col] ? new Date(row[col]).toISOString().slice(0, 10) : '';
+      const val = row[col] ? new Date(row[col]).toISOString().slice(0, 10) : "";
       return (
         <input
           type="date"
           className="border rounded px-1 py-0.5 w-full text-sm"
           value={val}
-          onChange={e => handleEdit(rowIdx, col, e.target.value)}
+          onChange={(e) => handleEdit(rowIdx, col, e.target.value)}
           aria-label={col}
         />
       );
@@ -180,8 +220,8 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
     return (
       <input
         className="border rounded px-1 py-0.5 w-full text-sm"
-        value={row[col] ?? ''}
-        onChange={e => handleEdit(rowIdx, col, e.target.value)}
+        value={row[col] ?? ""}
+        onChange={(e) => handleEdit(rowIdx, col, e.target.value)}
         placeholder={col}
         aria-label={col}
       />
@@ -196,51 +236,66 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
           className="border rounded px-2 py-1 text-sm"
           placeholder={`Search ${title}`}
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       {error ? (
-        <div className="p-4 text-red-600">Error loading {title}: {error.message}</div>
+        <div className="p-4 text-red-600">
+          Error loading {title}: {error.message}
+        </div>
       ) : (
         <table className="min-w-full bg-white rounded">
           <thead>
             <tr>
-              {columns.map(col => (
+              {columns.map((col) => (
                 <th
                   key={col}
                   className="px-4 py-2 text-left capitalize cursor-pointer select-none hover:bg-blue-100 transition-colors group"
                   onClick={() => {
                     if (sortField === col) {
-                      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                      setSortDirection(
+                        sortDirection === "asc" ? "desc" : "asc"
+                      );
                     } else {
                       setSortField(col);
-                      setSortDirection('asc');
+                      setSortDirection("asc");
                     }
                   }}
                   title="Click to sort by this column"
                 >
-                  {col.replace('_', ' ')}
+                  {col.replace("_", " ")}
                   {sortField === col && (
-                    <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                    <span className="ml-1">
+                      {sortDirection === "asc" ? "▲" : "▼"}
+                    </span>
                   )}
                 </th>
               ))}
               {/* Add status column if Lent sheet */}
-              {tableName === 'Lent' && <th className="px-4 py-2 text-left">Status</th>}
-              {tableName === 'Lent' && <th className="px-4 py-2 text-left">Delete</th>}
+              {tableName === "Lent" && (
+                <th className="px-4 py-2 text-left">Status</th>
+              )}
+              {tableName === "Lent" && (
+                <th className="px-4 py-2 text-left">Delete</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {sortedRows.map((row, rowIdx) => (
-              <tr key={row.id || rowIdx}>
-                {columns.map(col => (
+              <tr
+                key={row.id || rowIdx}
+                className="transition-colors hover:bg-gray-100"
+              >
+                {columns.map((col) => (
                   <td key={col} className="px-4 py-2">
                     {renderCell(row, rowIdx, col)}
                   </td>
                 ))}
-                {tableName === 'Lent' && (
+                {tableName === "Lent" && (
                   <>
-                    <td className="px-4 py-2">{renderCell(row, rowIdx, 'status')}</td>
+                    <td className="px-4 py-2">
+                      {renderCell(row, rowIdx, "status")}
+                    </td>
                     <td className="px-4 py-2">
                       <button
                         className="bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-3 py-1 rounded"
@@ -261,7 +316,9 @@ export default function AdminSpreadsheet({ title, columns, data, error, tableNam
       <div className="flex justify-end p-4">
         <button
           className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-6 rounded shadow"
-          onClick={() => {/* TODO: Implement backend update logic here */}}
+          onClick={() => {
+            /* TODO: Implement backend update logic here */
+          }}
           type="button"
         >
           Submit Changes

@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import AdminSpreadsheet from "@/components/AdminSpreadsheet";
 import LentItemsTable from "@/components/LentItemsTable";
 
@@ -93,9 +93,15 @@ export default async function MemberDashboard() {
   let allLentError: any = null;
   let allMembersError: any = null;
   if (isAdmin) {
-    const [{ data: lent, error: lentErr }, { data: members, error: membersErr }] = await Promise.all([
-      supabase.from("Lent").select("id, lent_date, due_date, gear_id, user_id").order("due_date", { ascending: true }),
-      supabase.from("Membership").select("joined_on, user_id, valid, admin")
+    const [
+      { data: lent, error: lentErr },
+      { data: members, error: membersErr },
+    ] = await Promise.all([
+      supabase
+        .from("Lent")
+        .select("id, lent_date, due_date, gear_id, user_id")
+        .order("due_date", { ascending: true }),
+      supabase.from("Membership").select("joined_on, user_id, valid, admin"),
     ]);
     allLentItems = lent || [];
     allMembers = members || [];
