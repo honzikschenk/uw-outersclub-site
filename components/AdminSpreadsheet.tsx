@@ -23,6 +23,8 @@ export default function AdminSpreadsheet({
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
+  const [originalRows, setOriginalRows] = useState<any[]>(data || []);
 
   // Fetch gear names and user names for mapping
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function AdminSpreadsheet({
 
   useEffect(() => {
     setRows(data || []);
+    setOriginalRows(data || []);
   }, [data]);
 
   // Set default sort field to the first column
@@ -92,9 +95,15 @@ export default function AdminSpreadsheet({
   };
 
   const handleDelete = (rowIdx: number) => {
-    const updated = rows.filter((_, idx) => idx !== rowIdx);
-    setRows(updated);
-    // TODO: Add backend delete logic here
+    setDeletedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowIdx)) {
+        newSet.delete(rowIdx); // undelete
+      } else {
+        newSet.add(rowIdx); // mark for deletion
+      }
+      return newSet;
+    });
   };
 
   const filteredRows = rows.filter((row) =>
@@ -228,6 +237,78 @@ export default function AdminSpreadsheet({
     );
   };
 
+  const handleSave = async () => {
+    try {
+      // Only allow admins to submit changes
+      const resAuth = await fetch("/api/me");
+      if (!resAuth.ok) {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      let user: any = null;
+      try {
+        user = await resAuth.json();
+      } catch {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      if (!user?.admin) {
+        alert("You do not have permission to make changes.");
+        return;
+      }
+      // Only send changed or deleted rows
+      const editedRows = rows.filter((row, idx) => {
+        if (deletedRows.has(idx)) return false;
+        const original = originalRows[idx];
+        if (!original) return true; // new row (not supported here)
+        for (const key of columns) {
+          if (row[key] !== original[key]) return true;
+        }
+        return false;
+      });
+      const deletedRowIds = Array.from(deletedRows).map(idx => originalRows[idx]?.id).filter(Boolean);
+      const res = await fetch("/api/admin-spreadsheet-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableName,
+          originalRows,
+          editedRows,
+          deletedRowIds,
+        }),
+      });
+      let result: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          result = await res.json();
+        } catch (jsonErr) {
+          throw new Error("Server returned invalid JSON.");
+        }
+      } else {
+        const text = await res.text();
+        throw new Error(
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+        );
+      }
+      if (res.ok && result.success) {
+        window.location.reload();
+      } else {
+        let errorMsg = "Some changes failed to save.";
+        if (result.errors && Array.isArray(result.errors)) {
+          errorMsg += "\n" + result.errors.join("\n");
+        } else if (result.error) {
+          errorMsg += "\n" + result.error;
+        } else if (result.message) {
+          errorMsg += "\n" + result.message;
+        }
+        alert(errorMsg);
+      }
+    } catch (err: any) {
+      alert("Network or server error: " + (err?.message || err));
+    }
+  };
+
   return (
     <Card className="overflow-x-auto p-0">
       <div className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-2">
@@ -284,26 +365,24 @@ export default function AdminSpreadsheet({
             {sortedRows.map((row, rowIdx) => (
               <tr
                 key={row.id || rowIdx}
-                className="transition-colors hover:bg-gray-100"
+                className={`transition-colors hover:bg-gray-100 ${deletedRows.has(rowIdx) ? 'bg-red-50 opacity-60 line-through' : ''}`}
               >
-                {columns.map((col) => (
+                {columns.map(col => (
                   <td key={col} className="px-4 py-2">
                     {renderCell(row, rowIdx, col)}
                   </td>
                 ))}
-                {tableName === "Lent" && (
+                {tableName === 'Lent' && (
                   <>
-                    <td className="px-4 py-2">
-                      {renderCell(row, rowIdx, "status")}
-                    </td>
+                    <td className="px-4 py-2">{renderCell(row, rowIdx, 'status')}</td>
                     <td className="px-4 py-2">
                       <button
-                        className="bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-3 py-1 rounded"
+                        className={`font-semibold px-3 py-1 rounded ${deletedRows.has(rowIdx) ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
                         onClick={() => handleDelete(rowIdx)}
                         type="button"
-                        title="Delete row"
+                        title={deletedRows.has(rowIdx) ? 'Undo delete' : 'Delete row'}
                       >
-                        Delete
+                        {deletedRows.has(rowIdx) ? 'Undo' : 'Delete'}
                       </button>
                     </td>
                   </>
@@ -316,9 +395,7 @@ export default function AdminSpreadsheet({
       <div className="flex justify-end p-4">
         <button
           className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-6 rounded shadow"
-          onClick={() => {
-            /* TODO: Implement backend update logic here */
-          }}
+          onClick={handleSave}
           type="button"
         >
           Submit Changes
