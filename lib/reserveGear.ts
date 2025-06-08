@@ -23,15 +23,25 @@ export async function reserveGear({ userId, itemId, from, to }: {
   if (!memberships) return { error: 'No active membership found.' }
   if (!memberships.valid) return { error: 'Membership expired or not valid.' }
 
-  // 2. Check if user already has an active rental
+  // 2. Check if user already has an active rental that overlaps with the requested period
   const { data: activeLent, error: lentError } = await supabase
     .from('Lent')
-    .select('id')
+    .select('id, lent_date, due_date')
     .eq('user_id', userId)
-    .limit(1)
 
   if (lentError) return { error: 'Could not check active rentals.' }
-  if (activeLent && activeLent.length > 0) return { error: 'You already have an item rented.' }
+  if (activeLent && activeLent.length > 0) {
+    // Check for overlap
+    const requestedStart = from.getTime();
+    const requestedEnd = to.getTime();
+    const overlap = activeLent.some((item: any) => {
+      const lentStart = new Date(item.lent_date).getTime();
+      const lentEnd = new Date(item.due_date).getTime();
+      const oneDay = 24 * 60 * 60 * 1000;
+      return requestedStart < (lentEnd - oneDay) && requestedEnd > lentStart;
+    });
+    if (overlap) return { error: 'You already have an item rented for overlapping dates.' }
+  }
 
   // 3. Check if item is available
   const { data: gears, error: gearError } = await supabase
