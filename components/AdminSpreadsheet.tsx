@@ -288,16 +288,25 @@ export default function AdminSpreadsheet({
         return;
       }
       // Only send changed or deleted rows
-      const editedRows = rows.filter((row, idx) => {
-        if (deletedRows.has(idx)) return false;
-        const original = originalRows[idx];
-        if (!original) return true; // new row (not supported here)
-        for (const key of columns) {
-          if (row[key] !== original[key]) return true;
-        }
-        return false;
-      });
-      const deletedRowIds = Array.from(deletedRows).map(idx => originalRows[idx]?.id).filter(Boolean);
+      const editedRows = rows
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ row, idx }) => {
+          if (deletedRows.has(idx)) return false;
+          const original = originalRows[idx];
+          if (!original) return false; // new row (not supported here)
+          for (const key of columns) {
+            if (row[key] !== original[key]) return true;
+          }
+          return false;
+        })
+        .map(({ row, idx }) => ({ ...row, id: originalRows[idx]?.id ?? row.id ?? row.user_id }));
+      const deletedRowIds = Array.from(deletedRows)
+        .map(idx => originalRows[idx]?.id ?? originalRows[idx]?.user_id)
+        .filter(Boolean);
+      if (editedRows.length === 0 && deletedRowIds.length === 0) {
+        alert("No changes to save.");
+        return;
+      }
       const res = await fetch("/api/admin-spreadsheet-save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
