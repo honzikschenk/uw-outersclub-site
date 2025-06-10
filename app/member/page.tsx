@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator"
 import React, { useState } from "react";
 import AdminSpreadsheet from "@/components/AdminSpreadsheet";
 import LentItemsTable from "@/components/LentItemsTable";
@@ -146,6 +147,7 @@ export default async function MemberDashboard() {
       {/* Admin spreadsheets */}
       {isAdmin && (
         <div className="mt-12 space-y-12">
+          <Separator />
           <h2 className="text-3xl font-bold mb-6">Admin Spreadsheets</h2>
           {/* Lent Items Spreadsheet */}
           <AdminSpreadsheet
