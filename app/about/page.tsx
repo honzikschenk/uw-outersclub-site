@@ -59,29 +59,29 @@ export default async function About() {
           <li>
             Sign up for the Outers Club membership on the UW Athletics and
             Recreation website
+            <ul className="list-disc list-inside ml-6">
+              <li>
+                Go to{" "}
+                <a
+                  className="text-green-500 hover:text-green-700 underline"
+                  href="https://warrior.uwaterloo.ca/Program/GetProgramDetails?courseId=61b7af94-85b6-46c8-818c-d1daa59bfc97"
+                >
+                  UW Athletics and Recreation - Outers Club Product page
+                </a>
+                . If the link doesn't work, go{" "}
+                <a
+                  className="text-green-500 hover:text-green-700 underline"
+                  href="https://warrior.uwaterloo.ca/"
+                >
+                  here
+                </a>{" "}
+                and click "Club Memberships", then "Outers Club"
+              </li>
+              <li>Click on "Sign In" in the top right corner</li>
+              <li>Log in with your UW credentials</li>
+              <li>Click "SELECT"</li>
+            </ul>
           </li>
-          <ul className="list-disc list-inside ml-6">
-            <li>
-              Go to{" "}
-              <a
-                className="text-green-500 hover:text-green-700 underline"
-                href="https://warrior.uwaterloo.ca/Program/GetProgramDetails?courseId=61b7af94-85b6-46c8-818c-d1daa59bfc97"
-              >
-                UW Athletics and Recreation - Outers Club Product page
-              </a>
-              . If the link doesn't work, go{" "}
-              <a
-                className="text-green-500 hover:text-green-700 underline"
-                href="https://warrior.uwaterloo.ca/"
-              >
-                here
-              </a>{" "}
-              and click "Club Memberships", then "Outers Club"
-            </li>
-            <li>Click on "Sign In" in the top right corner</li>
-            <li>Log in with your UW credentials</li>
-            <li>Click "SELECT"</li>
-          </ul>
           <li>
             Join the{" "}
             <a
