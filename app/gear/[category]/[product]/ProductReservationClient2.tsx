@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Calendar } from "@/components/ui/calendar";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/utils/supabase/client";
 
 export default function ProductReservationClient({
 	user,
@@ -18,67 +17,8 @@ export default function ProductReservationClient({
 	const [selectedRange, setSelectedRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
-	const [reservingNow, setReservingNow] = useState(false);
-	const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
 	const router = useRouter();
 	const { addToCart, isItemInCart, removeFromCart } = useShoppingCart();
-
-	// Load unavailable dates on component mount
-	useEffect(() => {
-		loadUnavailableDates();
-	}, [item.id]);
-
-	const loadUnavailableDates = async () => {
-		try {
-			const supabase = createClient();
-			
-			// Get all existing rentals for this item
-			const { data: rentals, error } = await supabase
-				.from('Lent')
-				.select('lent_date, due_date')
-				.eq('gear_id', item.id);
-
-			if (error) {
-				console.error('Error loading rental dates:', error);
-				return;
-			}
-
-			// Get item availability
-			const { data: gearData } = await supabase
-				.from('Gear')
-				.select('num_available')
-				.eq('id', item.id)
-				.single();
-
-			if (!gearData) return;
-
-			// Generate list of unavailable dates
-			const unavailable: Date[] = [];
-			const rentalCounts: { [dateKey: string]: number } = {};
-
-			// Count rentals for each date
-			rentals?.forEach((rental) => {
-				const start = new Date(rental.lent_date);
-				const end = new Date(rental.due_date);
-				
-				for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-					const dateKey = d.toDateString();
-					rentalCounts[dateKey] = (rentalCounts[dateKey] || 0) + 1;
-				}
-			});
-
-			// Mark dates as unavailable if all units are rented
-			Object.entries(rentalCounts).forEach(([dateKey, count]) => {
-				if (count >= gearData.num_available) {
-					unavailable.push(new Date(dateKey));
-				}
-			});
-
-			setUnavailableDates(unavailable);
-		} catch (error) {
-			console.error('Error loading availability:', error);
-		}
-	};
 
 	// Helper to check if a range is valid and get price key
 	function getRentalTypeAndPrice(range: { from: Date | null; to: Date | null }) {
@@ -136,69 +76,6 @@ export default function ProductReservationClient({
 		setError(null);
 	};
 
-	const handleReserveNow = async () => {
-		if (!selectedRange.from || !selectedRange.to || !rentalType) {
-			setError('Please select a valid rental period.');
-			return;
-		}
-
-		if (!user) {
-			setError('Please sign in to make a reservation.');
-			return;
-		}
-
-		setReservingNow(true);
-		setError(null);
-		setSuccess(null);
-
-		try {
-			// Create a single-item cart for immediate reservation
-			const cartItem = {
-				id: item.id,
-				name: item.name,
-				category: item.category,
-				price_tu_th: item.price_tu_th,
-				price_th_tu: item.price_th_tu,
-				price_week: item.price_week,
-				image_url: item.image_url,
-				selectedDates: {
-					from: selectedRange.from,
-					to: selectedRange.to,
-				},
-				rentalType,
-				price,
-			};
-
-			// Use the same checkout API as the cart
-			const response = await fetch('/api/checkout', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					cartItems: [cartItem],
-				}),
-			});
-
-			const result = await response.json();
-
-			if (!response.ok || result.error) {
-				setError(result.error || 'Failed to create reservation');
-				setReservingNow(false);
-				return;
-			}
-
-			setSuccess('Reservation successful! Please pick up your gear during equipment room hours.');
-			setSelectedRange({ from: null, to: null });
-			// Reload unavailable dates
-			loadUnavailableDates();
-		} catch (err: any) {
-			setError(err.message || 'Failed to create reservation');
-		} finally {
-			setReservingNow(false);
-		}
-	};
-
 	if (!user) {
 		return (
 			<div className="mt-6 text-center">
@@ -252,26 +129,7 @@ export default function ProductReservationClient({
 						}
 					}}
 					className="rounded-md border"
-					disabled={(date) => {
-						// Disable past dates
-						if (date < new Date()) return true;
-						
-						// Only allow Tuesdays (2) and Thursdays (4)
-						const dayOfWeek = date.getDay();
-						if (dayOfWeek !== 2 && dayOfWeek !== 4) return true;
-						
-						// If we have a start date, only allow dates within a week from the start date
-						if (selectedRange.from) {
-							const oneWeekFromStart = new Date(selectedRange.from);
-							oneWeekFromStart.setDate(oneWeekFromStart.getDate() + 7);
-							if (date > oneWeekFromStart) return true;
-						}
-						
-						// Disable unavailable dates
-						return unavailableDates.some(unavailableDate => 
-							date.toDateString() === unavailableDate.toDateString()
-						);
-					}}
+					disabled={(date) => date < new Date()}
 				/>
 			</div>
 
@@ -313,39 +171,15 @@ export default function ProductReservationClient({
 					>
 						Remove from Cart
 					</Button>
-					<div className="text-center text-sm text-muted-foreground py-2">
-						or
-					</div>
-					<Button 
-						onClick={handleReserveNow}
-						variant="secondary"
-						className="w-full" 
-						disabled={!selectedRange.from || !selectedRange.to || !rentalType || reservingNow}
-					>
-						{reservingNow ? 'Reserving...' : 'Reserve Now'}
-					</Button>
 				</div>
 			) : (
-				<div className="space-y-2">
-					<Button 
-						onClick={handleAddToCart}
-						className="w-full" 
-						disabled={!selectedRange.from || !selectedRange.to || !rentalType}
-					>
-						Add to Cart
-					</Button>
-					<div className="text-center text-sm text-muted-foreground py-2">
-						or
-					</div>
-					<Button 
-						onClick={handleReserveNow}
-						variant="secondary"
-						className="w-full" 
-						disabled={!selectedRange.from || !selectedRange.to || !rentalType || reservingNow}
-					>
-						{reservingNow ? 'Reserving...' : 'Reserve Now'}
-					</Button>
-				</div>
+				<Button 
+					onClick={handleAddToCart}
+					className="w-full" 
+					disabled={!selectedRange.from || !selectedRange.to || !rentalType}
+				>
+					Add to Cart
+				</Button>
 			)}
 		</div>
 	);

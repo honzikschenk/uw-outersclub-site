@@ -4,7 +4,6 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { reserveGear } from "@/lib/reserveGear";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -133,16 +132,3 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
-
-export async function reserveGearAction(formData: FormData) {
-  const userId = formData.get("userId") as string;
-  const itemId = formData.get("itemId") as string;
-  const fromStr = formData.get("from") as string | null;
-  const toStr = formData.get("to") as string | null;
-  if (!fromStr || !toStr) {
-    return { error: "Missing rental period." };
-  }
-  const from = new Date(fromStr);
-  const to = new Date(toStr);
-  return await reserveGear({ userId, itemId, from, to });
-}

@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { Analytics } from "@vercel/analytics/next"
+import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
+import { ShoppingCartSheet, MobileCartButton } from "@/components/ShoppingCart";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -52,12 +54,13 @@ export default function RootLayout({
     <html lang="en" className={geistSans.className} suppressHydrationWarning>
       <Analytics/>
       <body className="bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        <ShoppingCartProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 w-full flex flex-col items-center">
               <header className="bg-background py-4">
@@ -92,8 +95,14 @@ export default function RootLayout({
                     <a href="/contact" className="hover:text-primary">
                       Contact
                     </a>
+                    <ShoppingCartSheet />
                     {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
                   </nav>
+                  
+                  <div className="lg:hidden flex items-center gap-2 absolute right-16">
+                    <ShoppingCartSheet />
+                  </div>
+                  
                   <Sheet>
                     <SheetTrigger className={"lg:hidden absolute right-8"}>
                       <Menu />
@@ -133,13 +142,17 @@ export default function RootLayout({
                         <a href="/contact" className="hover:text-primary">
                           Contact
                         </a>
+                        <div className="pt-2 border-t">
+                          <ShoppingCartSheet />
+                        </div>
                         {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
                       </div>
                     </SheetContent>
                   </Sheet>
                 </div>
               </header>
-              <div className="flex flex-col w-full min-h-screen">{children}</div>
+              <div className="flex flex-col w-full min-h-screen pb-20 lg:pb-0">{children}</div>
+              <MobileCartButton />
               <footer className="w-full flex flex-col items-center justify-center border-t border-border bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 mx-auto text-center text-xs gap-2 py-8 mt-10 shadow-inner">
                 <div className="flex items-center gap-2">
                   <img
@@ -155,6 +168,7 @@ export default function RootLayout({
             </div>
           </main>
         </ThemeProvider>
+        </ShoppingCartProvider>
       </body>
     </html>
   );
