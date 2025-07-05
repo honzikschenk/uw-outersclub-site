@@ -36,9 +36,6 @@ export default function RentingTermsDialog() {
               Current student, or have a UWaterloo Athletics membership if you
               are on a co-op term.
             </li>
-            <li>
-              Proof of vaccination and a valid tap WatCard to enter the PAC.
-            </li>
           </ul>
           <h3 className="mt-4">How to Rent</h3>
           <ol className="list-decimal pl-5">
