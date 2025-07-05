@@ -33,7 +33,7 @@ export default async function MemberDashboard() {
   // Fetch user membership status
   const { data: memberships, error: membershipError } = await supabase
     .from("Membership")
-    .select("user_id, valid, admin")
+    .select("user_id, valid, admin, name")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -120,7 +120,7 @@ export default async function MemberDashboard() {
         .from("Lent")
         .select("id, lent_date, due_date, gear_id, user_id")
         .order("due_date", { ascending: true }),
-      supabase.from("Membership").select("joined_on, user_id, valid, admin"),
+      supabase.from("Membership").select("joined_on, user_id, valid, admin, name"),
     ]);
     allLentItems = lent || [];
     allMembers = members || [];
@@ -160,7 +160,7 @@ export default async function MemberDashboard() {
           {/* Members Spreadsheet */}
           <AdminSpreadsheet
             title="Memberships"
-            columns={["user_id", "joined_on", "valid", "admin"]}
+            columns={["user_id", "name", "joined_on", "valid", "admin"]}
             data={allMembers}
             error={allMembersError}
             tableName="Membership"

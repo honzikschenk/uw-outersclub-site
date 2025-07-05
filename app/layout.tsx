@@ -81,7 +81,7 @@ export default function RootLayout({
                       Gear Rental
                     </a>
                     <a href="/member" className="hover:text-primary">
-                      Members
+                      My Rentals
                     </a>
                     <a href="/events" className="hover:text-primary">
                       Events/Trips
@@ -122,7 +122,7 @@ export default function RootLayout({
                           Gear Rental
                         </a>
                         <a href="/member" className="hover:text-primary">
-                          Members
+                          My Rentals
                         </a>
                         <a href="/events" className="hover:text-primary">
                           Events/Trips
