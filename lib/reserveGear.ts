@@ -37,8 +37,9 @@ export async function reserveCartItems({
   // 2. Check if user already has overlapping rentals
   const { data: activeLent, error: lentError } = await supabase
     .from("Lent")
-    .select("id, lent_date, due_date, gear_id")
-    .eq("user_id", userId);
+    .select("id, lent_date, due_date, gear_id, returned")
+    .eq("user_id", userId)
+    .neq("returned", true);
 
   if (lentError) return { error: "Could not check active rentals." };
 
@@ -80,8 +81,9 @@ export async function reserveCartItems({
     // Check for overlapping rentals for this specific item
     const { data: overlappingLent, error: overlapError } = await supabase
       .from("Lent")
-      .select("id, lent_date, due_date")
-      .eq("gear_id", cartItem.id);
+      .select("id, lent_date, due_date, returned")
+      .eq("gear_id", cartItem.id)
+      .neq("returned", true);
 
     if (overlapError)
       return {
@@ -111,6 +113,7 @@ export async function reserveCartItems({
     gear_id: cartItem.id,
     lent_date: cartItem.selectedDates.from.toISOString(),
     due_date: cartItem.selectedDates.to.toISOString(),
+    returned: false,
   }));
 
   console.log(`[reserveCartItems] Creating reservations:`, JSON.stringify(reservations, null, 2));

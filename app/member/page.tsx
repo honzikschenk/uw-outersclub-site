@@ -71,7 +71,7 @@ export default async function MemberDashboard() {
   // Fetch currently lent items for this user
   const { data: lentItems, error: lentError } = await supabase
     .from("Lent")
-    .select("id, user_id, gear_id, lent_date, due_date")
+    .select("id, user_id, gear_id, lent_date, due_date, returned")
     .eq("user_id", user.id)
     .order("due_date", { ascending: true });
 
@@ -118,7 +118,7 @@ export default async function MemberDashboard() {
     ] = await Promise.all([
       supabase
         .from("Lent")
-        .select("id, lent_date, due_date, gear_id, user_id")
+        .select("id, lent_date, due_date, gear_id, user_id, returned")
         .order("due_date", { ascending: true }),
       supabase.from("Membership").select("joined_on, user_id, valid, admin, name"),
     ]);
@@ -152,7 +152,7 @@ export default async function MemberDashboard() {
           {/* Lent Items Spreadsheet */}
           <AdminSpreadsheet
             title="Lent Items"
-            columns={["lent_date", "due_date", "gear_id", "user_id"]}
+            columns={["lent_date", "due_date", "gear_id", "user_id", "returned"]}
             data={allLentItems}
             error={allLentError}
             tableName="Lent"

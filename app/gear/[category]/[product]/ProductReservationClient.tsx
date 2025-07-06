@@ -32,11 +32,12 @@ export default function ProductReservationClient({
 		try {
 			const supabase = createClient();
 			
-			// Get all existing rentals for this item
+			// Get all existing rentals for this item (excluding returned items)
 			const { data: rentals, error } = await supabase
 				.from('Lent')
-				.select('lent_date, due_date')
-				.eq('gear_id', item.id);
+				.select('lent_date, due_date, returned')
+				.eq('gear_id', item.id)
+				.eq('returned', false);
 
 			if (error) {
 				console.error('Error loading rental dates:', error);

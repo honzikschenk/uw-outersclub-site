@@ -78,7 +78,7 @@ export default function AdminSpreadsheet({
   const handleEdit = (rowIdx: number, col: string, value: any) => {
     let parsedValue = value;
     // Parse boolean fields
-    if (columns.includes(col) && (col === "valid" || col === "admin")) {
+    if (columns.includes(col) && (col === "valid" || col === "admin" || col === "returned")) {
       parsedValue = value === "true" || value === true;
     }
     // Parse date fields
@@ -195,13 +195,17 @@ export default function AdminSpreadsheet({
       const due = row.due_date ? new Date(row.due_date) : null;
       const now = new Date();
       let status = "";
-      if (lent && lent > now) {
+      
+      if (row.returned) {
+        status = "Returned";
+      } else if (lent && lent > now) {
         status = "Reserved";
       } else if (due && due < now) {
         status = "Past Due";
       } else {
         status = "On Loan";
       }
+      
       return (
         <span
           className={
@@ -209,7 +213,9 @@ export default function AdminSpreadsheet({
               ? "text-red-600 font-semibold"
               : status === "Reserved"
                 ? "text-lime-600 font-semibold"
-                : ""
+                : status === "Returned"
+                  ? "text-gray-600 font-semibold"
+                  : ""
           }
         >
           {status}
@@ -229,7 +235,7 @@ export default function AdminSpreadsheet({
       return <span>{userMap[row.user_id] || row.user_id || "-"}</span>;
     }
     // Boolean fields
-    if (col === "valid" || col === "admin") {
+    if (col === "valid" || col === "admin" || col === "returned") {
       return (
         <select
           className="border rounded px-1 py-0.5 w-full text-sm"
