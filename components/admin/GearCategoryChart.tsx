@@ -5,9 +5,9 @@ import { PieChart, BarChart3 } from "lucide-react";
 interface CategoryStat {
   category: string;
   total: number;
-  available: number;
-  unavailable: number;
+  totalUnits: number;
   currentlyRented: number;
+  availableUnits: number;
   utilizationRate: number;
 }
 
@@ -54,7 +54,7 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
                     ></div>
                   </div>
                   <div className="flex justify-between text-xs text-gray-600 mt-1">
-                    <span>Available: {cat.available}</span>
+                    <span>Available: {cat.availableUnits}</span>
                     <span>Rented: {cat.currentlyRented}</span>
                   </div>
                 </div>

@@ -15,7 +15,7 @@ export default async function GearPage() {
   ] = await Promise.all([
     supabase
       .from("Gear")
-      .select("id, name, category, available, description")
+      .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
       .order("category", { ascending: true }),
     supabase
       .from("Lent")
@@ -42,26 +42,26 @@ export default async function GearPage() {
 
   // Calculate gear statistics
   const totalGear = gear.length;
-  const availableGear = gear.filter(g => g.available);
-  const unavailableGear = gear.filter(g => !g.available);
+  const totalAvailableUnits = gear.reduce((sum, g) => sum + (g.num_available || 0), 0);
+  const currentlyRentedCount = rentals.filter(r => !r.returned).length;
   
   // Group gear by category
   const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
   const categoryStats = categories.map(category => {
     const categoryGear = gear.filter(g => g.category === category);
-    const available = categoryGear.filter(g => g.available).length;
-    const total = categoryGear.length;
+    const totalUnits = categoryGear.reduce((sum, g) => sum + (g.num_available || 0), 0);
+    const totalItems = categoryGear.length;
     const rentalCount = rentals.filter(r => 
       categoryGear.some(g => g.id === r.gear_id) && !r.returned
     ).length;
     
     return {
       category,
-      total,
-      available,
-      unavailable: total - available,
+      total: totalItems,
+      totalUnits,
       currentlyRented: rentalCount,
-      utilizationRate: total > 0 ? Math.round((rentalCount / total) * 100) : 0
+      availableUnits: Math.max(0, totalUnits - rentalCount),
+      utilizationRate: totalUnits > 0 ? Math.round((rentalCount / totalUnits) * 100) : 0
     };
   });
 
@@ -101,23 +101,23 @@ export default async function GearPage() {
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
+            <CardTitle className="text-sm font-medium">Available Units</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{availableGear.length}</div>
-            <p className="text-xs text-gray-600">Ready to rent</p>
+            <div className="text-2xl font-bold text-green-600">{totalAvailableUnits}</div>
+            <p className="text-xs text-gray-600">Total units available</p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Checked Out</CardTitle>
+            <CardTitle className="text-sm font-medium">Currently Rented</CardTitle>
             <XCircle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{unavailableGear.length}</div>
-            <p className="text-xs text-gray-600">Currently rented</p>
+            <div className="text-2xl font-bold text-orange-600">{currentlyRentedCount}</div>
+            <p className="text-xs text-gray-600">Units checked out</p>
           </CardContent>
         </Card>
 
@@ -152,12 +152,12 @@ export default async function GearPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Total:</span>
+                      <span className="text-gray-600">Items:</span>
                       <p className="font-bold">{cat.total}</p>
                     </div>
                     <div>
                       <span className="text-gray-600">Available:</span>
-                      <p className="font-bold text-green-600">{cat.available}</p>
+                      <p className="font-bold text-green-600">{cat.availableUnits}</p>
                     </div>
                     <div>
                       <span className="text-gray-600">Rented:</span>

@@ -25,7 +25,7 @@ export default async function AnalyticsPage() {
       .order("joined_on", { ascending: true }),
     supabase
       .from("Gear")
-      .select("id, name, category, available, description")
+      .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
       .order("category", { ascending: true }),
   ]);
 
@@ -100,7 +100,7 @@ export default async function AnalyticsPage() {
     }
     
     acc[category].totalItems++;
-    if (gearItem.available) acc[category].availableItems++;
+    acc[category].availableItems += gearItem.num_available || 0;
     
     const itemRentals = lentItems.filter(rental => rental.gear_id === gearItem.id);
     acc[category].totalRentals += itemRentals.length;

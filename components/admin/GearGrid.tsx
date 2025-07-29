@@ -26,8 +26,13 @@ interface GearItem {
   id: number;
   name: string;
   category: string;
-  available: boolean;
+  num_available: number;
   description: string | null;
+  price_tu_th: number | null;
+  price_th_tu: number | null;
+  price_week: number | null;
+  total_times_rented: number | null;
+  revenue_generated: number | null;
 }
 
 interface GearGridProps {
@@ -37,7 +42,7 @@ interface GearGridProps {
 export default function GearGrid({ gear }: GearGridProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "available" | "unavailable">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "available" | "out_of_stock">("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
@@ -53,8 +58,8 @@ export default function GearGrid({ gear }: GearGridProps) {
     
     const matchesStatus = 
       filterStatus === "all" ||
-      (filterStatus === "available" && item.available) ||
-      (filterStatus === "unavailable" && !item.available);
+      (filterStatus === "available" && (item.num_available || 0) > 0) ||
+      (filterStatus === "out_of_stock" && (item.num_available || 0) === 0);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -116,10 +121,10 @@ export default function GearGrid({ gear }: GearGridProps) {
                   All Items
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus("available")}>
-                  Available Only
+                  Available (In Stock)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterStatus("unavailable")}>
-                  Checked Out
+                <DropdownMenuItem onClick={() => setFilterStatus("out_of_stock")}>
+                  Out of Stock
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -165,15 +170,15 @@ export default function GearGrid({ gear }: GearGridProps) {
                           Edit Item
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleGearAction("toggle", item.id)}>
-                          {item.available ? (
+                          {(item.num_available || 0) > 0 ? (
                             <>
                               <XCircle className="h-4 w-4 mr-2" />
-                              Mark as Unavailable
+                              Mark as Out of Stock
                             </>
                           ) : (
                             <>
                               <CheckCircle className="h-4 w-4 mr-2" />
-                              Mark as Available
+                              Add Stock
                             </>
                           )}
                         </DropdownMenuItem>
@@ -183,16 +188,16 @@ export default function GearGrid({ gear }: GearGridProps) {
                   
                   <div className="mb-3">
                     <Badge 
-                      variant={item.available ? "default" : "secondary"}
-                      className={item.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                      variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
+                      className={(item.num_available || 0) > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
                     >
                       <div className="flex items-center gap-1">
-                        {item.available ? (
+                        {(item.num_available || 0) > 0 ? (
                           <CheckCircle className="h-3 w-3" />
                         ) : (
                           <XCircle className="h-3 w-3" />
                         )}
-                        {item.available ? "Available" : "Checked Out"}
+                        {(item.num_available || 0) > 0 ? `${item.num_available} available` : "Out of stock"}
                       </div>
                     </Badge>
                   </div>
@@ -232,16 +237,16 @@ export default function GearGrid({ gear }: GearGridProps) {
                     </td>
                     <td className="py-4 px-6">
                       <Badge 
-                        variant={item.available ? "default" : "secondary"}
-                        className={item.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                        variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
+                        className={(item.num_available || 0) > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
                       >
                         <div className="flex items-center gap-1">
-                          {item.available ? (
+                          {(item.num_available || 0) > 0 ? (
                             <CheckCircle className="h-3 w-3" />
                           ) : (
                             <XCircle className="h-3 w-3" />
                           )}
-                          {item.available ? "Available" : "Checked Out"}
+                          {(item.num_available || 0) > 0 ? `${item.num_available} available` : "Out of stock"}
                         </div>
                       </Badge>
                     </td>
@@ -265,15 +270,15 @@ export default function GearGrid({ gear }: GearGridProps) {
                             Edit Item
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleGearAction("toggle", item.id)}>
-                            {item.available ? (
+                            {(item.num_available || 0) > 0 ? (
                               <>
                                 <XCircle className="h-4 w-4 mr-2" />
-                                Mark as Unavailable
+                                Mark as Out of Stock
                               </>
                             ) : (
                               <>
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark as Available
+                                Add Stock
                               </>
                             )}
                           </DropdownMenuItem>

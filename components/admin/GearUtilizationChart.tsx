@@ -6,8 +6,13 @@ interface GearUtilization {
   id: number;
   name: string;
   category: string;
-  available: boolean;
+  num_available: number;
   description: string | null;
+  price_tu_th: number | null;
+  price_th_tu: number | null;
+  price_week: number | null;
+  total_times_rented: number | null;
+  revenue_generated: number | null;
   totalRentals: number;
   currentlyRented: number;
   utilizationScore: number;
@@ -87,7 +92,7 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
                     </div>
                     <div className="flex justify-between text-xs text-gray-600 mt-1">
                       <span>
-                        {item.available ? 'Available' : 'Currently rented'}
+                        {(item.num_available || 0) > 0 ? `${item.num_available} available` : 'Out of stock'}
                       </span>
                       <span>
                         Score: {item.utilizationScore}

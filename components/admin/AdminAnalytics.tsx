@@ -39,30 +39,17 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
         acc[category] = { total: 0, available: 0 };
       }
       acc[category].total++;
-      if (item.available) {
-        acc[category].available++;
-      }
+      acc[category].available += item.num_available || 0;
       return acc;
     }, {});
 
-    // Rental trends
-    const rentalsByMonth = lentItems.reduce((acc: Record<string, number>, item) => {
-      if (item.lent_date) {
-        const month = new Date(item.lent_date).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'short' 
-        });
-        acc[month] = (acc[month] || 0) + 1;
-      }
-      return acc;
-    }, {});
+    // Rental trends - removed basic version since we have RentalChart component
 
     return {
       recentRentals: recentRentals.length,
       popularGear,
       newMembers: newMembers.length,
-      categoryStats,
-      rentalsByMonth: Object.entries(rentalsByMonth).slice(-6) // Last 6 months
+      categoryStats
     };
   }, [lentItems, members, gear]);
 
@@ -133,7 +120,7 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                 <div className="text-right">
                   <p className="font-medium">{item.rentalCount} rentals</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.available ? 'Available' : 'Unavailable'}
+                    {item.num_available ? `${item.num_available} available` : 'Out of stock'}
                   </p>
                 </div>
               </div>
@@ -162,33 +149,6 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                     className="bg-green-500 h-2 rounded-full" 
                     style={{ width: `${(stats.available / stats.total) * 100}%` }}
                   ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Rental Trends */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rental Trends (Last 6 Months)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {analytics.rentalsByMonth.map(([month, count]) => (
-              <div key={month} className="flex items-center justify-between">
-                <span className="font-medium">{month}</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full" 
-                      style={{ 
-                        width: `${Math.min((count / Math.max(...analytics.rentalsByMonth.map(([_, c]) => c))) * 100, 100)}%` 
-                      }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-medium w-8 text-right">{count}</span>
                 </div>
               </div>
             ))}
