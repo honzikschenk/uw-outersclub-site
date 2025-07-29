@@ -78,7 +78,7 @@ export default function AdminSpreadsheet({
   const handleEdit = (rowIdx: number, col: string, value: any) => {
     let parsedValue = value;
     // Parse boolean fields
-    if (columns.includes(col) && (col === "valid" || col === "admin" || col === "returned")) {
+    if (columns.includes(col) && (col === "valid" || col === "admin" || col === "returned" || col === "available")) {
       parsedValue = value === "true" || value === true;
     }
     // Parse date fields
@@ -235,7 +235,7 @@ export default function AdminSpreadsheet({
       return <span>{userMap[row.user_id] || row.user_id || "-"}</span>;
     }
     // Boolean fields
-    if (col === "valid" || col === "admin" || col === "returned") {
+    if (col === "valid" || col === "admin" || col === "returned" || col === "available") {
       return (
         <select
           className="border rounded px-1 py-0.5 w-full text-sm"
@@ -305,9 +305,12 @@ export default function AdminSpreadsheet({
           }
           return false;
         })
-        .map(({ row, idx }) => ({ ...row, id: originalRows[idx]?.id ?? row.id ?? row.user_id }));
+        .map(({ row, idx }) => ({ 
+          ...row, 
+          id: originalRows[idx]?.id ?? row.id ?? (tableName === 'Membership' ? row.user_id : null)
+        }));
       const deletedRowIds = Array.from(deletedRows)
-        .map(idx => originalRows[idx]?.id ?? originalRows[idx]?.user_id)
+        .map(idx => originalRows[idx]?.id ?? (tableName === 'Membership' ? originalRows[idx]?.user_id : null))
         .filter(Boolean);
       if (editedRows.length === 0 && deletedRowIds.length === 0) {
         alert("No changes to save.");
@@ -404,7 +407,7 @@ export default function AdminSpreadsheet({
               )}
               {/* Add edit/undo column */}
               <th className="px-4 py-2 text-left">{`Undo`}</th>
-              {tableName === "Lent" && (
+              {(tableName === "Lent" || tableName === "Gear") && (
                 <th className="px-4 py-2 text-left">Delete</th>
               )}
             </tr>
@@ -443,7 +446,7 @@ export default function AdminSpreadsheet({
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  {tableName === 'Lent' && (
+                  {(tableName === 'Lent' || tableName === 'Gear') && (
                     <td className="px-4 py-2">
                       <button
                         className={`font-semibold px-3 py-1 rounded ${isDeleted ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
