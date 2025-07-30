@@ -1,6 +1,19 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Package, TrendingUp } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 
 interface GearUtilization {
   id: number;
@@ -26,17 +39,29 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
   const maxScore = Math.max(...gearUtilization.map(g => g.utilizationScore), 1);
 
   const colors = [
-    "bg-blue-500",
-    "bg-green-500", 
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-red-500",
-    "bg-yellow-500",
-    "bg-pink-500",
-    "bg-indigo-500",
-    "bg-teal-500",
-    "bg-gray-500"
+    "#3b82f6",
+    "#10b981", 
+    "#8b5cf6",
+    "#f59e0b",
+    "#ef4444",
+    "#eab308",
+    "#ec4899",
+    "#6366f1",
+    "#14b8a6",
+    "#6b7280"
   ];
+
+  // Prepare data for charts
+  const chartData = gearUtilization.map((item, index) => ({
+    name: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name,
+    fullName: item.name,
+    category: item.category,
+    totalRentals: item.totalRentals,
+    currentlyRented: item.currentlyRented,
+    available: item.num_available || 0,
+    utilizationScore: item.utilizationScore,
+    fill: colors[index % colors.length]
+  }));
 
   return (
     <Card>
@@ -68,39 +93,55 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
           <div className="space-y-4">
             <h4 className="font-medium">Most Popular Items</h4>
             {gearUtilization.length > 0 ? (
-              gearUtilization.map((item, index) => (
-                <div key={item.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full ${colors[index % colors.length]}`}></div>
-                      <div>
-                        <span className="font-medium text-sm">{item.name}</span>
-                        <p className="text-xs text-gray-600 capitalize">{item.category}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold">{item.totalRentals}</span>
-                      <p className="text-xs text-gray-600">rentals</p>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className={`h-3 rounded-full ${colors[index % colors.length]}`}
-                        style={{ width: `${(item.totalRentals / maxScore) * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-600 mt-1">
-                      <span>
-                        {(item.num_available || 0) > 0 ? `${item.num_available} available` : 'Out of stock'}
-                      </span>
-                      <span>
-                        Score: {item.utilizationScore}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      type="number"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      type="category"
+                      dataKey="name"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      width={120}
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                              <p className="font-medium">{data.fullName}</p>
+                              <p className="text-sm text-gray-600 capitalize">{data.category}</p>
+                              <p className="text-blue-600">
+                                {`Total Rentals: ${data.totalRentals}`}
+                              </p>
+                              <p className="text-orange-600">
+                                {`Currently Rented: ${data.currentlyRented}`}
+                              </p>
+                              <p className="text-green-600">
+                                {`Available: ${data.available}`}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar 
+                      dataKey="totalRentals" 
+                      fill="#3b82f6"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 No gear utilization data available

@@ -1,6 +1,19 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PieChart, BarChart3 } from "lucide-react";
+import { PieChart as PieChartIcon, BarChart3 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 
 interface CategoryStat {
   category: string;
@@ -16,17 +29,46 @@ interface GearCategoryChartProps {
 }
 
 export default function GearCategoryChart({ categoryStats }: GearCategoryChartProps) {
-  const maxTotal = Math.max(...categoryStats.map(c => c.total));
   const colors = [
-    "bg-blue-500",
-    "bg-green-500", 
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-red-500",
-    "bg-yellow-500",
-    "bg-pink-500",
-    "bg-indigo-500"
+    "#3b82f6",
+    "#10b981", 
+    "#8b5cf6",
+    "#f59e0b",
+    "#ef4444",
+    "#eab308",
+    "#ec4899",
+    "#6366f1"
   ];
+
+  // Prepare data for charts
+  const chartData = categoryStats.map((cat, index) => ({
+    category: cat.category,
+    total: cat.total,
+    available: cat.availableUnits,
+    rented: cat.currentlyRented,
+    utilizationRate: cat.utilizationRate,
+    fill: colors[index % colors.length]
+  }));
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        className="text-xs font-medium"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -39,56 +81,114 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {categoryStats.map((cat, index) => (
-              <div key={cat.category} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium capitalize text-sm">{cat.category}</span>
-                  <span className="text-sm text-gray-600">{cat.total} items</span>
-                </div>
-                <div className="relative">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className={`h-3 rounded-full ${colors[index % colors.length]}`}
-                      style={{ width: `${maxTotal > 0 ? (cat.total / maxTotal) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600 mt-1">
-                    <span>Available: {cat.availableUnits}</span>
-                    <span>Rented: {cat.currentlyRented}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="category"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis 
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                          <p className="font-medium capitalize">{label}</p>
+                          <p className="text-blue-600">
+                            {`Total Items: ${data.total}`}
+                          </p>
+                          <p className="text-green-600">
+                            {`Available: ${data.available}`}
+                          </p>
+                          <p className="text-orange-600">
+                            {`Currently Rented: ${data.rented}`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar 
+                  dataKey="total" 
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Utilization Rate Chart */}
+      {/* Utilization Rate Pie Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <PieChart className="h-5 w-5" />
+            <PieChartIcon className="h-5 w-5" />
             Utilization Rates
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {categoryStats.map((cat, index) => (
-              <div key={cat.category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${colors[index % colors.length]}`}></div>
-                  <div>
-                    <p className="font-medium capitalize text-sm">{cat.category}</p>
-                    <p className="text-xs text-gray-600">{cat.total} total items</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg">{cat.utilizationRate}%</p>
-                  <p className="text-xs text-gray-600">utilized</p>
-                </div>
-              </div>
-            ))}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="utilizationRate"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={colors[index % colors.length]} 
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                          <p className="font-medium capitalize">{data.category}</p>
+                          <p className="text-blue-600">
+                            {`Utilization Rate: ${data.utilizationRate}%`}
+                          </p>
+                          <p className="text-gray-600">
+                            {`${data.rented} of ${data.total} items rented`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => (
+                    <span className="capitalize text-sm">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
           
           {categoryStats.length === 0 && (

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import GearEditModal from "./GearEditModal";
 import { 
   Search, 
   Filter, 
@@ -44,6 +45,8 @@ export default function GearGrid({ gear }: GearGridProps) {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "available" | "out_of_stock">("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
 
@@ -65,8 +68,25 @@ export default function GearGrid({ gear }: GearGridProps) {
   });
 
   const handleGearAction = async (action: string, gearId: number) => {
-    console.log(`${action} for gear ${gearId}`);
-    // TODO: Implement actual API calls for gear management
+    const gearItem = gear.find(g => g.id === gearId);
+    
+    if (action === "edit" && gearItem) {
+      setSelectedGear(gearItem);
+      setIsEditModalOpen(true);
+    } else if (action === "view" && gearItem) {
+      // Open view details modal or navigate to detail page
+      setSelectedGear(gearItem);
+      setIsEditModalOpen(true);
+    } else {
+      console.log(`${action} for gear ${gearId}`);
+      // TODO: Implement other actions like toggle availability
+    }
+  };
+
+  const handleSaveGear = (updatedGear: GearItem) => {
+    console.log("Saving gear:", updatedGear);
+    // TODO: Implement actual API call to update gear
+    // This would typically call an API endpoint to update the gear in the database
   };
 
   return (
@@ -298,6 +318,17 @@ export default function GearGrid({ gear }: GearGridProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Edit Modal */}
+      <GearEditModal
+        gear={selectedGear}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedGear(null);
+        }}
+        onSave={handleSaveGear}
+      />
     </Card>
   );
 }

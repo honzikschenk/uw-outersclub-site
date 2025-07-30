@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import UserEditModal from "./UserEditModal";
 import { 
   Search, 
   Filter, 
@@ -39,6 +40,8 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "admin">("all");
   const [sortField, setSortField] = useState<keyof Member>("joined_on");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedUser, setSelectedUser] = useState<Member | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filter and sort members
   const filteredMembers = members.filter((member) => {
@@ -88,9 +91,21 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   };
 
   const handleMemberAction = async (action: string, memberId: string) => {
-    // Placeholder for member actions
-    console.log(`${action} for member ${memberId}`);
-    // TODO: Implement actual API calls for member management
+    const member = members.find(m => m.user_id === memberId);
+    
+    if ((action === "view" || action === "edit") && member) {
+      setSelectedUser(member);
+      setIsEditModalOpen(true);
+    } else {
+      console.log(`${action} for member ${memberId}`);
+      // TODO: Implement other actions like toggle status/admin
+    }
+  };
+
+  const handleSaveUser = (updatedUser: Member) => {
+    console.log("Saving user:", updatedUser);
+    // TODO: Implement actual API call to update user
+    // This would typically call an API endpoint to update the user in the database
   };
 
   return (
@@ -279,6 +294,17 @@ export default function UserManagementTable({ members }: UserManagementTableProp
           )}
         </div>
       </CardContent>
+
+      {/* Edit Modal */}
+      <UserEditModal
+        user={selectedUser}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedUser(null);
+        }}
+        onSave={handleSaveUser}
+      />
     </Card>
   );
 }

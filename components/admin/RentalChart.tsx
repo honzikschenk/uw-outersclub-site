@@ -1,6 +1,21 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, Calendar, BarChart3 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 
 interface EnhancedRental {
   id: number;
@@ -78,13 +93,33 @@ export default function RentalChart({ rentals }: RentalChartProps) {
   const maxCategoryCount = Math.max(...categoryData.map(d => d.count), 1);
 
   const colors = [
-    "bg-blue-500",
-    "bg-green-500", 
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-red-500",
-    "bg-yellow-500"
+    "#3b82f6",
+    "#10b981", 
+    "#8b5cf6",
+    "#f59e0b",
+    "#ef4444",
+    "#eab308"
   ];
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        className="text-xs font-medium"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -97,34 +132,66 @@ export default function RentalChart({ rentals }: RentalChartProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {monthlyData.map((data, index) => (
-              <div key={data.month} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{data.month}</span>
-                  <span className="text-sm text-gray-600">{data.total} rentals</span>
-                </div>
-                <div className="relative">
-                  {/* Total bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-500 h-3 rounded-full relative"
-                      style={{ width: `${(data.total / maxTotal) * 100}%` }}
-                    >
-                      {/* Returned portion */}
-                      <div 
-                        className="bg-green-500 h-3 rounded-full absolute top-0 left-0"
-                        style={{ width: data.total > 0 ? `${(data.returned / data.total) * 100}%` : '0%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600 mt-1">
-                    <span>Active: {data.active}</span>
-                    <span>Returned: {data.returned}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                          <p className="font-medium">{`${label}`}</p>
+                          <p className="text-blue-600">
+                            {`Total Rentals: ${payload[0]?.value}`}
+                          </p>
+                          <p className="text-green-600">
+                            {`Returned: ${payload[1]?.value}`}
+                          </p>
+                          <p className="text-orange-600">
+                            {`Active: ${payload[2]?.value}`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="#3b82f6" 
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="returned" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="active" 
+                  stroke="#f59e0b" 
+                  strokeWidth={2}
+                  dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
           
           <div className="mt-6 pt-4 border-t">
@@ -136,6 +203,10 @@ export default function RentalChart({ rentals }: RentalChartProps) {
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span>Returned</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span>Active</span>
               </div>
             </div>
           </div>
@@ -151,29 +222,54 @@ export default function RentalChart({ rentals }: RentalChartProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {categoryData.length > 0 ? (
-              categoryData.map((data, index) => (
-                <div key={data.category} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm capitalize">{data.category}</span>
-                    <span className="text-sm text-gray-600">{data.count} rentals</span>
-                  </div>
-                  <div className="relative">
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className={`h-3 rounded-full ${colors[index % colors.length]}`}
-                        style={{ width: `${(data.count / maxCategoryCount) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No rentals this month
-              </div>
-            )}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={colors[index % colors.length]} 
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                          <p className="font-medium capitalize">{data.category}</p>
+                          <p className="text-blue-600">
+                            {`${data.count} rentals`}
+                          </p>
+                          <p className="text-gray-600">
+                            {`${((data.count / currentMonthRentals.length) * 100).toFixed(1)}% of total`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => (
+                    <span className="capitalize text-sm">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
           
           {categoryData.length > 0 && (

@@ -1,6 +1,17 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, Users } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from 'recharts';
 
 interface Member {
   user_id: string;
@@ -99,44 +110,108 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
           {/* Growth Chart */}
           <div className="space-y-4">
             <h4 className="font-medium">Monthly Membership Trends</h4>
-            {growthData.map((data, index) => (
-              <div key={data.month} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{data.month}</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-600">Total: {data.total}</span>
-                    <span className="text-green-600">+{data.newMembers} new</span>
-                  </div>
-                </div>
-                <div className="relative">
-                  {/* Total membership bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-500 h-3 rounded-full relative"
-                      style={{ width: `${(data.total / maxTotal) * 100}%` }}
-                    >
-                      {/* Active members portion */}
-                      <div 
-                        className="bg-green-500 h-3 rounded-full absolute top-0 left-0"
-                        style={{ width: data.total > 0 ? `${(data.active / data.total) * 100}%` : '0%' }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* New members indicator */}
-                  {data.newMembers > 0 && (
-                    <div className="mt-1 relative">
-                      <div className="w-full bg-gray-100 rounded-full h-1">
-                        <div 
-                          className="bg-orange-400 h-1 rounded-full"
-                          style={{ width: `${(data.newMembers / maxNew) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                            <p className="font-medium">{`${label}`}</p>
+                            <p className="text-blue-600">
+                              {`Total Members: ${payload[0]?.value}`}
+                            </p>
+                            <p className="text-green-600">
+                              {`Active Members: ${payload[1]?.value}`}
+                            </p>
+                            <p className="text-orange-600">
+                              {`New Members: ${payload[2]?.value}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="total" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="active" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="newMembers" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                    dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Additional Bar Chart for New Members */}
+            <div className="h-48 mt-6">
+              <h4 className="font-medium mb-3">New Members by Month</h4>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                            <p className="font-medium">{`${label}`}</p>
+                            <p className="text-orange-600">
+                              {`New Members: ${payload[0]?.value}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="newMembers" 
+                    fill="#f59e0b"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Legend */}
