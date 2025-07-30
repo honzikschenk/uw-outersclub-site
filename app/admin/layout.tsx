@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Sidebar } from "@/components/admin/Sidebar";
+import QuickActions from "@/components/admin/QuickActions";
 
 export default async function AdminLayout({
   children,
@@ -36,6 +37,7 @@ export default async function AdminLayout({
       <main className="flex-1 p-8">
         {children}
       </main>
+      <QuickActions />
     </div>
   );
 }
