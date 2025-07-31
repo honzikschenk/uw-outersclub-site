@@ -12,11 +12,16 @@ export async function POST(request: Request) {
     }
 
     // Check admin status
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from("Membership")
       .select("admin")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error("Error checking admin status:", membershipError);
+      return NextResponse.json({ error: "Error checking admin status" }, { status: 500 });
+    }
 
     if (!membership?.admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
@@ -47,11 +52,15 @@ export async function POST(request: Request) {
           revenue_generated: 0
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error creating gear:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      
+      if (!data) {
+        return NextResponse.json({ error: "Failed to create gear item" }, { status: 500 });
       }
       
       result = data;
@@ -70,11 +79,15 @@ export async function POST(request: Request) {
         })
         .eq("id", gearData.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error updating gear:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      
+      if (!data) {
+        return NextResponse.json({ error: "Gear item not found" }, { status: 404 });
       }
       
       result = data;
@@ -98,11 +111,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from("Membership")
       .select("admin")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error("Error checking admin status:", membershipError);
+      return NextResponse.json({ error: "Error checking admin status" }, { status: 500 });
+    }
 
     if (!membership?.admin) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
