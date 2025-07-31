@@ -13,8 +13,25 @@ interface QuickActionsProps {
 export default function QuickActions({ gearItems = [], users = [] }: QuickActionsProps) {
   const [isGearModalOpen, setIsGearModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [selectedGear, setSelectedGear] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedGear, setSelectedGear] = useState<{
+    id: number;
+    name: string;
+    category: string;
+    num_available: number;
+    description: string;
+    price_tu_th: number | null;
+    price_th_tu: number | null;
+    price_week: number | null;
+    total_times_rented: number;
+    revenue_generated: number;
+  } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<{
+    user_id: string;
+    name: string;
+    joined_on: string;
+    valid: boolean;
+    admin: boolean;
+  } | null>(null);
 
   const handleAddNewGear = () => {
     // Create empty gear template for new item
