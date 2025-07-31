@@ -1,44 +1,110 @@
-import { createClient } from "@/utils/supabase/server";
+"use client";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, Plus, Archive, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 import GearGrid from "@/components/admin/GearGrid";
 import GearCategoryChart from "@/components/admin/GearCategoryChart";
+import GearEditModal from "@/components/admin/GearEditModal";
 
-export default async function GearPage() {
-  const supabase = await createClient();
+export default function GearPage() {
+  const [gear, setGear] = useState<any[]>([]);
+  const [rentals, setRentals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Fetch all gear with usage statistics
-  const [
-    { data: allGear, error: gearError },
-    { data: rentalData, error: rentalError }
-  ] = await Promise.all([
-    supabase
-      .from("Gear")
-      .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
-      .order("category", { ascending: true }),
-    supabase
-      .from("Lent")
-      .select("gear_id, lent_date, returned")
-  ]);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  if (gearError || rentalError) {
+  const loadData = async () => {
+    try {
+      const supabase = createClient();
+      
+      const [
+        { data: allGear, error: gearError },
+        { data: rentalData, error: rentalError }
+      ] = await Promise.all([
+        supabase
+          .from("Gear")
+          .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
+          .order("category", { ascending: true }),
+        supabase
+          .from("Lent")
+          .select("gear_id, lent_date, returned")
+      ]);
+
+      if (gearError || rentalError) {
+        setError(gearError?.message || rentalError?.message || "Unknown error");
+        return;
+      }
+
+      setGear(allGear || []);
+      setRentals(rentalData || []);
+    } catch (err) {
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddNewGear = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveGear = async (gearData: any) => {
+    try {
+      const response = await fetch('/api/admin/gear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...gearData,
+          id: Date.now(), // Temporary ID for new items
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Gear saved successfully:", result);
+        setIsAddModalOpen(false);
+        // Reload data
+        loadData();
+      } else {
+        const error = await response.json();
+        console.error("Error saving gear:", error.error);
+        alert(`Error saving gear: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving gear:", error);
+      alert("Error saving gear. Please try again.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-gray-900">Gear Management</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-gray-900">Gear Management</h1>
         <Card>
           <CardContent className="p-6">
-            <p className="text-red-600">
-              Error loading gear data: {gearError?.message || rentalError?.message}
-            </p>
+            <p className="text-red-600">Error loading gear data: {error}</p>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  const gear = allGear || [];
-  const rentals = rentalData || [];
 
   // Calculate gear statistics
   const totalGear = gear.length;
@@ -80,7 +146,10 @@ export default async function GearPage() {
           <h1 className="text-3xl font-bold text-gray-900">Gear Management</h1>
           <p className="text-gray-600 mt-2">Manage equipment inventory and availability</p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700">
+        <Button 
+          className="bg-green-600 hover:bg-green-700"
+          onClick={handleAddNewGear}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add New Gear
         </Button>
@@ -215,6 +284,25 @@ export default async function GearPage() {
 
       {/* Gear Grid */}
       <GearGrid gear={gear} />
+
+      {/* Add New Gear Modal */}
+      <GearEditModal
+        gear={{
+          id: Date.now(),
+          name: '',
+          category: '',
+          num_available: 0,
+          description: '',
+          price_tu_th: null,
+          price_th_tu: null,
+          price_week: null,
+          total_times_rented: 0,
+          revenue_generated: 0
+        }}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveGear}
+      />
     </div>
   );
 }

@@ -64,14 +64,56 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
     setIsUserModalOpen(true);
   };
 
-  const handleSaveGear = (gear: any) => {
-    console.log("Quick action - saving gear:", gear);
-    // TODO: Implement API call
+  const handleSaveGear = async (gear: any) => {
+    try {
+      const response = await fetch('/api/admin/gear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(gear),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Gear saved successfully:", result);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error("Error saving gear:", error.error);
+        alert(`Error saving gear: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving gear:", error);
+      alert("Error saving gear. Please try again.");
+    }
   };
 
-  const handleSaveUser = (user: any) => {
-    console.log("Quick action - saving user:", user);
-    // TODO: Implement API call
+  const handleSaveUser = async (user: any) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(user),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("User saved successfully:", result);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error("Error saving user:", error.error);
+        alert(`Error saving user: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving user:", error);
+      alert("Error saving user. Please try again.");
+    }
   };
 
   return (

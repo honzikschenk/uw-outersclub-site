@@ -5,6 +5,7 @@ import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import MembershipGrowthChart from "@/components/admin/MembershipGrowthChart";
 import GearUtilizationChart from "@/components/admin/GearUtilizationChart";
 import OverdueAnalysis from "@/components/admin/OverdueAnalysis";
+import MonthlyStatsChart from "@/components/admin/MonthlyStatsChart";
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
@@ -14,6 +15,7 @@ export default async function AnalyticsPage() {
     { data: allLentItems, error: lentError },
     { data: allMembers, error: membersError },
     { data: allGear, error: gearError },
+    { data: monthlyStats, error: monthlyStatsError },
   ] = await Promise.all([
     supabase
       .from("Lent")
@@ -27,6 +29,10 @@ export default async function AnalyticsPage() {
       .from("Gear")
       .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
       .order("category", { ascending: true }),
+    supabase
+      .from("MonthlyStats")
+      .select("id, month, total_revenue, total_items")
+      .order("month", { ascending: true }),
   ]);
 
   if (lentError || membersError || gearError) {
@@ -47,6 +53,7 @@ export default async function AnalyticsPage() {
   const lentItems = allLentItems || [];
   const members = allMembers || [];
   const gear = allGear || [];
+  const stats = monthlyStats || [];
 
   // Calculate key metrics
   const now = new Date();
@@ -235,6 +242,11 @@ export default async function AnalyticsPage() {
         </CardContent>
       </Card>
 
+      {/* Monthly Stats from Database */}
+      {stats.length > 0 && (
+        <MonthlyStatsChart monthlyStats={stats} />
+      )}
+
       {/* Detailed Analytics Components */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <MembershipGrowthChart members={members} />
@@ -242,13 +254,6 @@ export default async function AnalyticsPage() {
       </div>
 
       <OverdueAnalysis rentals={lentItems} overdueRentals={overdueRentals} />
-
-      {/* Original Detailed Analytics */}
-      <AdminAnalytics 
-        lentItems={lentItems} 
-        members={members} 
-        gear={gear} 
-      />
     </div>
   );
 }

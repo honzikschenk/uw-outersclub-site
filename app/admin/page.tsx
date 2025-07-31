@@ -22,7 +22,7 @@ export default async function AdminOverview() {
       .order("joined_on", { ascending: false }),
     supabase
       .from("Gear")
-      .select("id, name, category, available, description")
+      .select("id, name, category, num_available, description")
       .order("category", { ascending: true }),
   ]);
 
@@ -34,7 +34,7 @@ export default async function AdminOverview() {
   );
   const totalMembers = allMembers?.filter(member => member.valid) || [];
   const totalGear = allGear?.length || 0;
-  const availableGear = allGear?.filter(gear => gear.available) || [];
+  const availableGear = allGear?.filter(gear => (gear.num_available || 0) > 0) || [];
 
   // Recent activity (last 7 days)
   const weekAgo = new Date();

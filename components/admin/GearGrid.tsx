@@ -83,10 +83,30 @@ export default function GearGrid({ gear }: GearGridProps) {
     }
   };
 
-  const handleSaveGear = (updatedGear: GearItem) => {
-    console.log("Saving gear:", updatedGear);
-    // TODO: Implement actual API call to update gear
-    // This would typically call an API endpoint to update the gear in the database
+  const handleSaveGear = async (updatedGear: GearItem) => {
+    try {
+      const response = await fetch('/api/admin/gear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedGear),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Gear saved successfully:", result);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error("Error saving gear:", error.error);
+        alert(`Error saving gear: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving gear:", error);
+      alert("Error saving gear. Please try again.");
+    }
   };
 
   return (

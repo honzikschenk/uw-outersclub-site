@@ -102,10 +102,30 @@ export default function UserManagementTable({ members }: UserManagementTableProp
     }
   };
 
-  const handleSaveUser = (updatedUser: Member) => {
-    console.log("Saving user:", updatedUser);
-    // TODO: Implement actual API call to update user
-    // This would typically call an API endpoint to update the user in the database
+  const handleSaveUser = async (updatedUser: Member) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedUser),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("User saved successfully:", result);
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        console.error("Error saving user:", error.error);
+        alert(`Error saving user: ${error.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving user:", error);
+      alert("Error saving user. Please try again.");
+    }
   };
 
   return (
