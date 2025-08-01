@@ -1,12 +1,57 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users, Package, Clock, AlertTriangle, TrendingUp, Calendar, FileText } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import AdminSpreadsheet from "@/components/AdminSpreadsheet";
 import Link from "next/link";
 
 export default async function AdminOverview() {
   const supabase = await createClient();
 
-  // Fetch all data for admin overview
+  // Check authentication and admin status
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="p-8 text-center">
+          <p className="mb-4">You must be signed in to view the admin dashboard.</p>
+          <Link href="/sign-in" className="underline text-green-600">
+            Sign in
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check admin status
+  const { data: membership, error: membershipError } = await supabase
+    .from("Membership")
+    .select("user_id, valid, admin, name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    return (
+      <div className="p-8 text-red-600">
+        Error loading membership status: {membershipError.message}
+      </div>
+    );
+  }
+
+  if (!membership?.admin) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="p-8 text-center">
+          <p className="mb-4">Admin access required to view this page.</p>
+          <Link href="/member" className="underline text-green-600">
+            Go to Member Dashboard
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  // Fetch all data for admin overview and spreadsheets
   const [
     { data: allLentItems, error: lentError },
     { data: allMembers, error: membersError },
@@ -22,7 +67,7 @@ export default async function AdminOverview() {
       .order("joined_on", { ascending: false }),
     supabase
       .from("Gear")
-      .select("id, name, category, num_available, description")
+      .select("id, name, category, num_available, description, price_tu_th, price_th_tu, price_week, total_times_rented, revenue_generated")
       .order("category", { ascending: true }),
   ]);
 
@@ -46,8 +91,8 @@ export default async function AdminOverview() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Overview</h1>
-        <p className="text-gray-600 mt-2">Welcome to the UW Outers Club admin dashboard</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <p className="text-gray-600 mt-2">Manage gear, rentals, and memberships</p>
       </div>
       
       {/* Key Metrics */}
@@ -105,108 +150,58 @@ export default async function AdminOverview() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <Link href="/admin/users" className="group">
-          <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm md:text-base">Manage Users</h3>
-                  <p className="text-xs md:text-sm text-gray-600 truncate">View and edit member accounts</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+      {/* Admin Spreadsheets */}
+      <div className="space-y-8">
+        <Separator />
+        
+        {/* Rental Management */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+            <FileText className="h-6 w-6 text-green-600" />
+            Rental Management
+          </h2>
+          <p className="text-gray-600 mb-4">Track gear rentals and mark items as returned</p>
+          <AdminSpreadsheet
+            title="Lent Items"
+            columns={["lent_date", "due_date", "gear_id", "user_id", "returned"]}
+            data={allLentItems || []}
+            error={lentError}
+            tableName="Lent"
+          />
+        </div>
 
-        <Link href="/admin/gear" className="group">
-          <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Package className="h-6 w-6 text-purple-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm md:text-base">Manage Gear</h3>
-                  <p className="text-xs md:text-sm text-gray-600 truncate">Update inventory and availability</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        {/* Gear Management */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+            <Package className="h-6 w-6 text-purple-600" />
+            Gear Inventory
+          </h2>
+          <p className="text-gray-600 mb-4">Manage gear details, pricing, and availability</p>
+          <AdminSpreadsheet
+            title="Gear Items"
+            columns={["name", "category", "num_available", "description", "price_tu_th", "price_th_tu", "price_week"]}
+            data={allGear || []}
+            error={gearError}
+            tableName="Gear"
+          />
+        </div>
 
-        <Link href="/admin/rentals" className="group">
-          <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm md:text-base">Track Rentals</h3>
-                  <p className="text-xs md:text-sm text-gray-600 truncate">Monitor checkout status</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/analytics" className="group">
-          <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-orange-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm md:text-base">View Analytics</h3>
-                  <p className="text-xs md:text-sm text-gray-600 truncate">Detailed reports and trends</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        {/* Member Management */}
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            Member Management
+          </h2>
+          <p className="text-gray-600 mb-4">Manage member accounts and admin privileges</p>
+          <AdminSpreadsheet
+            title="Members"
+            columns={["name", "joined_on", "valid", "admin"]}
+            data={allMembers || []}
+            error={membersError}
+            tableName="Membership"
+          />
+        </div>
       </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <Calendar className="h-5 w-5" />
-            Recent Activity (Last 7 days)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentRentals.length > 0 ? (
-            <div className="space-y-3">
-              {recentRentals.slice(0, 5).map((rental) => (
-                <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm md:text-base">Gear ID: {rental.gear_id}</p>
-                    <p className="text-xs md:text-sm text-gray-600">
-                      Rented on {new Date(rental.lent_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-xs md:text-sm flex-shrink-0">
-                    Due: {rental.due_date ? new Date(rental.due_date).toLocaleDateString() : 'N/A'}
-                  </div>
-                </div>
-              ))}
-              {recentRentals.length > 5 && (
-                <Link href="/admin/rentals" className="block text-center text-blue-600 hover:text-blue-800 text-sm font-medium">
-                  View all recent rentals →
-                </Link>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-600">No recent rental activity</p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
