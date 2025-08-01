@@ -67,9 +67,9 @@ export default function UserEditModal({ user, isOpen, onClose, onSave }: UserEdi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <User className="h-5 w-5" />
             Edit User Details
           </DialogTitle>
@@ -78,7 +78,7 @@ export default function UserEditModal({ user, isOpen, onClose, onSave }: UserEdi
         <div className="space-y-6">
           {/* User Identity */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-medium flex items-center gap-2">
               <User className="h-4 w-4" />
               User Identity
             </h3>
@@ -91,6 +91,7 @@ export default function UserEditModal({ user, isOpen, onClose, onSave }: UserEdi
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter user's display name"
+                  className="w-full"
                 />
               </div>
               

@@ -131,21 +131,21 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">Member Directory</CardTitle>
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="text-lg md:text-xl">Member Directory</CardTitle>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search members..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto">
                   <Filter className="h-4 w-4" />
                   Filter
                   <ChevronDown className="h-4 w-4" />
@@ -170,7 +170,117 @@ export default function UserManagementTable({ members }: UserManagementTableProp
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile Card View */}
+        <div className="block md:hidden">
+          <div className="space-y-4 p-4">
+            {filteredMembers.map((member) => (
+              <div key={member.user_id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">
+                        {(member.name || member.user_id.substring(0, 2)).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {member.name || "Unknown"}
+                      </div>
+                      <div className="text-xs text-gray-500 font-mono">
+                        {member.user_id.substring(0, 8)}...
+                      </div>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleMemberAction("view", member.user_id)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleMemberAction("toggle-status", member.user_id)}>
+                        {member.valid ? (
+                          <>
+                            <UserX className="h-4 w-4 mr-2" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            Activate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleMemberAction("toggle-admin", member.user_id)}>
+                        {member.admin ? (
+                          <>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Remove Admin
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-4 w-4 mr-2" />
+                            Make Admin
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-gray-600">
+                    Joined: {member.joined_on 
+                      ? new Date(member.joined_on).toLocaleDateString()
+                      : "N/A"
+                    }
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant={member.valid ? "default" : "secondary"}
+                    className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                  >
+                    <div className="flex items-center gap-1">
+                      {member.valid ? (
+                        <UserCheck className="h-3 w-3" />
+                      ) : (
+                        <UserX className="h-3 w-3" />
+                      )}
+                      {member.valid ? "Active" : "Inactive"}
+                    </div>
+                  </Badge>
+                  {member.admin ? (
+                    <Badge variant="destructive">
+                      <div className="flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        Admin
+                      </div>
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      <div className="flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        Member
+                      </div>
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+            {filteredMembers.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No members found matching your criteria.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>

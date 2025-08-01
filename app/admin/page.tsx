@@ -44,14 +44,14 @@ export default async function AdminOverview() {
   ) || [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Overview</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Overview</h1>
         <p className="text-gray-600 mt-2">Welcome to the UW Outers Club admin dashboard</p>
       </div>
       
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
@@ -106,17 +106,17 @@ export default async function AdminOverview() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Link href="/admin/users" className="group">
           <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-lg">
                   <Users className="h-6 w-6 text-blue-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold">Manage Users</h3>
-                  <p className="text-sm text-gray-600">View and edit member accounts</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm md:text-base">Manage Users</h3>
+                  <p className="text-xs md:text-sm text-gray-600 truncate">View and edit member accounts</p>
                 </div>
               </div>
             </CardContent>
@@ -125,14 +125,14 @@ export default async function AdminOverview() {
 
         <Link href="/admin/gear" className="group">
           <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">
                   <Package className="h-6 w-6 text-purple-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold">Manage Gear</h3>
-                  <p className="text-sm text-gray-600">Update inventory and availability</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm md:text-base">Manage Gear</h3>
+                  <p className="text-xs md:text-sm text-gray-600 truncate">Update inventory and availability</p>
                 </div>
               </div>
             </CardContent>
@@ -141,14 +141,14 @@ export default async function AdminOverview() {
 
         <Link href="/admin/rentals" className="group">
           <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-100 rounded-lg">
                   <FileText className="h-6 w-6 text-green-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold">Track Rentals</h3>
-                  <p className="text-sm text-gray-600">Monitor checkout status</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm md:text-base">Track Rentals</h3>
+                  <p className="text-xs md:text-sm text-gray-600 truncate">Monitor checkout status</p>
                 </div>
               </div>
             </CardContent>
@@ -157,14 +157,14 @@ export default async function AdminOverview() {
 
         <Link href="/admin/analytics" className="group">
           <Card className="group-hover:shadow-lg transition-all group-hover:scale-105">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-orange-100 rounded-lg">
                   <TrendingUp className="h-6 w-6 text-orange-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold">View Analytics</h3>
-                  <p className="text-sm text-gray-600">Detailed reports and trends</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm md:text-base">View Analytics</h3>
+                  <p className="text-xs md:text-sm text-gray-600 truncate">Detailed reports and trends</p>
                 </div>
               </div>
             </CardContent>
@@ -175,7 +175,7 @@ export default async function AdminOverview() {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
             <Calendar className="h-5 w-5" />
             Recent Activity (Last 7 days)
           </CardTitle>
@@ -184,14 +184,14 @@ export default async function AdminOverview() {
           {recentRentals.length > 0 ? (
             <div className="space-y-3">
               {recentRentals.slice(0, 5).map((rental) => (
-                <div key={rental.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Gear ID: {rental.gear_id}</p>
-                    <p className="text-sm text-gray-600">
+                <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm md:text-base">Gear ID: {rental.gear_id}</p>
+                    <p className="text-xs md:text-sm text-gray-600">
                       Rented on {new Date(rental.lent_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-sm">
+                  <div className="text-xs md:text-sm flex-shrink-0">
                     Due: {rental.due_date ? new Date(rental.due_date).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>

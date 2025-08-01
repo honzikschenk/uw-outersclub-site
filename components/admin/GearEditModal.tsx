@@ -54,9 +54,9 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
             Edit Gear Item
           </DialogTitle>
@@ -65,12 +65,12 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
         <div className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
+            <h3 className="text-base md:text-lg font-medium flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Basic Information
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="name">Item Name</Label>
                 <Input
@@ -78,6 +78,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter gear name"
+                  className="w-full"
                 />
               </div>
               
@@ -88,6 +89,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
                   value={formData.category}
                   onChange={(e) => handleInputChange('category', e.target.value)}
                   placeholder="Enter category"
+                  className="w-full"
                 />
               </div>
             </div>
