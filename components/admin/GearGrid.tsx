@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,8 @@ import {
   CheckCircle,
   XCircle,
   Package,
-  Eye
+  Save,
+  Trash2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,14 +45,171 @@ export default function GearGrid({ gear }: GearGridProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "available" | "out_of_stock">("all");
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Change tracking state for batch operations
+  const [originalRows, setOriginalRows] = useState<GearItem[]>(gear || []);
+  const [editedRows, setEditedRows] = useState<GearItem[]>(gear || []);
+  const [editedRowIndices, setEditedRowIndices] = useState<Set<number>>(new Set());
+  const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
 
   const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
 
+  useEffect(() => {
+    setOriginalRows(gear || []);
+    setEditedRows(gear || []);
+    setEditedRowIndices(new Set());
+    setDeletedRows(new Set());
+  }, [gear]);
+
+  const handleDelete = (gearId: number) => {
+    const rowIndex = editedRows.findIndex(item => item.id === gearId);
+    if (rowIndex === -1) return;
+
+    setDeletedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowIndex)) {
+        newSet.delete(rowIndex); // undelete
+      } else {
+        newSet.add(rowIndex); // mark for deletion
+      }
+      return newSet;
+    });
+  };
+
+  const handleGearEdit = (gearId: number) => {
+    const gearItem = editedRows.find(g => g.id === gearId);
+    if (gearItem) {
+      setSelectedGear(gearItem);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveGear = (updatedGear: GearItem) => {
+    // Update the edited rows with the new gear data
+    const gearIndex = editedRows.findIndex(g => g.id === updatedGear.id);
+    if (gearIndex !== -1) {
+      const updated = editedRows.map((row, idx) =>
+        idx === gearIndex ? updatedGear : row
+      );
+      setEditedRows(updated);
+      
+      // Check if this item was actually changed compared to original
+      const original = originalRows[gearIndex];
+      let isEdited = false;
+      if (original) {
+        for (const key of Object.keys(updatedGear) as Array<keyof GearItem>) {
+          if (updatedGear[key] !== original[key]) {
+            isEdited = true;
+            break;
+          }
+        }
+      }
+      
+      setEditedRowIndices(prev => {
+        const newSet = new Set(prev);
+        if (isEdited) {
+          newSet.add(gearIndex);
+        } else {
+          newSet.delete(gearIndex);
+        }
+        return newSet;
+      });
+    }
+    setIsEditModalOpen(false);
+    setSelectedGear(null);
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      // Only allow admins to submit changes
+      const resAuth = await fetch("/api/me");
+      if (!resAuth.ok) {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      let user: any = null;
+      try {
+        user = await resAuth.json();
+      } catch {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      if (!user?.admin) {
+        alert("You do not have permission to make changes.");
+        return;
+      }
+
+      // Only send changed or deleted rows
+      const changedRows = editedRows
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ row, idx }) => {
+          if (deletedRows.has(idx)) return false;
+          const original = originalRows[idx];
+          if (!original) return false;
+          for (const key of Object.keys(row) as Array<keyof GearItem>) {
+            if (row[key] !== original[key]) return true;
+          }
+          return false;
+        })
+        .map(({ row }) => row);
+
+      const deletedRowIds = Array.from(deletedRows)
+        .map(idx => originalRows[idx]?.id)
+        .filter(Boolean);
+
+      if (changedRows.length === 0 && deletedRowIds.length === 0) {
+        alert("No changes to save.");
+        return;
+      }
+
+      const res = await fetch("/api/admin/gear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalRows,
+          editedRows: changedRows,
+          deletedRowIds,
+        }),
+      });
+
+      let result: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          result = await res.json();
+        } catch (jsonErr) {
+          throw new Error("Server returned invalid JSON.");
+        }
+      } else {
+        const text = await res.text();
+        throw new Error(
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+        );
+      }
+
+      if (res.ok && result.success) {
+        alert("Changes saved successfully!");
+        window.location.reload();
+      } else {
+        let errorMsg = "Some changes failed to save.";
+        if (result.errors && Array.isArray(result.errors)) {
+          errorMsg += "\n" + result.errors.join("\n");
+        } else if (result.error) {
+          errorMsg += "\n" + result.error;
+        } else if (result.message) {
+          errorMsg += "\n" + result.message;
+        }
+        alert(errorMsg);
+      }
+    } catch (err: any) {
+      alert("Network or server error: " + (err?.message || err));
+    }
+  };
+
   // Filter gear
-  const filteredGear = gear.filter((item) => {
+  const filteredGear = editedRows.filter((item) => {
     const matchesSearch = !searchTerm || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -67,58 +225,27 @@ export default function GearGrid({ gear }: GearGridProps) {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleGearAction = async (action: string, gearId: number) => {
-    const gearItem = gear.find(g => g.id === gearId);
-    
-    if (action === "edit" && gearItem) {
-      setSelectedGear(gearItem);
-      setIsEditModalOpen(true);
-    } else if (action === "view" && gearItem) {
-      // Open view details modal or navigate to detail page
-      setSelectedGear(gearItem);
-      setIsEditModalOpen(true);
-    } else {
-      console.log(`${action} for gear ${gearId}`);
-      // TODO: Implement other actions like toggle availability
-    }
-  };
-
-  const handleSaveGear = async (updatedGear: GearItem) => {
-    try {
-      const response = await fetch('/api/admin/gear', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedGear),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Gear saved successfully:", result);
-        // Refresh the page to show updated data
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        console.error("Error saving gear:", error.error);
-        alert(`Error saving gear: ${error.error}`);
-      }
-    } catch (error) {
-      console.error("Error saving gear:", error);
-      alert("Error saving gear. Please try again.");
-    }
-  };
+  const hasChanges = editedRowIndices.size > 0 || deletedRows.size > 0;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-col space-y-4">
-          <CardTitle className="text-lg md:text-xl flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Gear Inventory
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Gear Inventory
+            </CardTitle>
+            
+            {hasChanges && (
+              <Button onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700">
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes ({editedRowIndices.size + deletedRows.size})
+              </Button>
+            )}
+          </div>
           
-          {/* Mobile-friendly controls */}
+          {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -171,25 +298,26 @@ export default function GearGrid({ gear }: GearGridProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Button
-                variant="outline"
-                onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-                className="w-full sm:w-auto hidden md:block"
-              >
-                {viewMode === "grid" ? "Table View" : "Grid View"}
-              </Button>
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {/* Mobile: Always show grid, Desktop: Toggle between grid and table */}
-        <div className="block md:hidden">
-          {/* Mobile Grid View */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredGear.map((item) => (
-              <Card key={item.id} className="hover:shadow-lg transition-all duration-200">
+        {/* Grid View - Works on all screen sizes */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredGear.map((item) => {
+            const originalIndex = editedRows.findIndex(r => r.id === item.id);
+            const isEdited = editedRowIndices.has(originalIndex);
+            const isDeleted = deletedRows.has(originalIndex);
+            
+            return (
+              <Card 
+                key={item.id} 
+                className={`hover:shadow-lg transition-all duration-200 group ${
+                  isDeleted ? 'bg-red-50 opacity-60 line-through' : 
+                  isEdited ? 'bg-yellow-50 border-yellow-200' : ''
+                }`}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -203,29 +331,28 @@ export default function GearGrid({ gear }: GearGridProps) {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleGearAction("view", item.id)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleGearAction("edit", item.id)}>
+                        <DropdownMenuItem onClick={() => handleGearEdit(item.id)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Item
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleGearAction("toggle", item.id)}>
-                          {(item.num_available || 0) > 0 ? (
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(item.id)}
+                          className={isDeleted ? "text-green-600" : "text-red-600"}
+                        >
+                          {isDeleted ? (
                             <>
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Mark as Out of Stock
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Undo Delete
                             </>
                           ) : (
                             <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Add Stock
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
                             </>
                           )}
                         </DropdownMenuItem>
@@ -252,166 +379,39 @@ export default function GearGrid({ gear }: GearGridProps) {
                   {item.description && (
                     <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
                   )}
+
+                  {/* Show pricing info if available */}
+                  {(item.price_tu_th || item.price_th_tu || item.price_week) && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500">
+                        {item.price_tu_th && `Tue-Thu: $${item.price_tu_th}`}
+                        {item.price_th_tu && ` • Thu-Tue: $${item.price_th_tu}`}
+                        {item.price_week && ` • Week: $${item.price_week}`}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Show edit/delete indicators */}
+                  {(isEdited || isDeleted) && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex items-center gap-1">
+                        {isEdited && (
+                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                            Modified
+                          </Badge>
+                        )}
+                        {isDeleted && (
+                          <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                            Marked for deletion
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Desktop: Show grid or table based on viewMode */}
-        <div className="hidden md:block">
-          {viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredGear.map((item) => (
-                <Card key={item.id} className="hover:shadow-lg transition-all duration-200 group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Package className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex flex-col">
-                          <h3 className="font-semibold text-sm line-clamp-1">{item.name}</h3>
-                          <p className="text-xs text-gray-600 capitalize">{item.category}</p>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleGearAction("view", item.id)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleGearAction("edit", item.id)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Item
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleGearAction("toggle", item.id)}>
-                            {(item.num_available || 0) > 0 ? (
-                              <>
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Mark as Out of Stock
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Add Stock
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <Badge 
-                        variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
-                        className={(item.num_available || 0) > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                      >
-                        <div className="flex items-center gap-1">
-                          {(item.num_available || 0) > 0 ? (
-                            <CheckCircle className="h-3 w-3" />
-                          ) : (
-                            <XCircle className="h-3 w-3" />
-                          )}
-                          {(item.num_available || 0) > 0 ? `${item.num_available} available` : "Out of stock"}
-                        </div>
-                      </Badge>
-                    </div>
-                    
-                    {item.description && (
-                      <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left py-3 px-6 font-medium text-gray-500">Name</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-500">Category</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-500">Status</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-500">Description</th>
-                    <th className="text-left py-3 px-6 font-medium text-gray-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredGear.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Package className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-600 capitalize">
-                        {item.category}
-                      </td>
-                      <td className="py-4 px-6">
-                        <Badge 
-                          variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
-                          className={(item.num_available || 0) > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                        >
-                          <div className="flex items-center gap-1">
-                            {(item.num_available || 0) > 0 ? (
-                              <CheckCircle className="h-3 w-3" />
-                            ) : (
-                              <XCircle className="h-3 w-3" />
-                            )}
-                            {(item.num_available || 0) > 0 ? `${item.num_available} available` : "Out of stock"}
-                          </div>
-                        </Badge>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-600 max-w-xs truncate">
-                        {item.description || "No description"}
-                      </td>
-                      <td className="py-4 px-6">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleGearAction("view", item.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGearAction("edit", item.id)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Item
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGearAction("toggle", item.id)}>
-                              {(item.num_available || 0) > 0 ? (
-                                <>
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Mark as Out of Stock
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Add Stock
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            );
+          })}
         </div>
         
         {filteredGear.length === 0 && (

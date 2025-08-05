@@ -1,109 +1,67 @@
-import { createClient } from "@/utils/supabase/server";
+import { supabaseService } from "@/utils/supabase/service";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { originalRows, editedRows, deletedRowIds } = await request.json();
+    const supabase = supabaseService;
+    let errors: string[] = [];
 
-    // Check admin status
-    const { data: membership, error: membershipError } = await supabase
-      .from("Membership")
-      .select("admin")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (membershipError) {
-      console.error("Error checking admin status:", membershipError);
-      return NextResponse.json({ error: "Error checking admin status" }, { status: 500 });
-    }
-
-    if (!membership?.admin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
-
-    const gearData = await request.json();
-    
-    // Validate required fields
-    if (!gearData.name || !gearData.category) {
-      return NextResponse.json({ error: "Name and category are required" }, { status: 400 });
-    }
-
-    let result;
-    
-    if (gearData.id && gearData.id > 1000000) {
-      // This is a new item (temporary ID was assigned), create it
-      const { data, error } = await supabase
-        .from("Gear")
-        .insert({
-          name: gearData.name,
-          category: gearData.category,
-          num_available: gearData.num_available || 0,
-          description: gearData.description || null,
-          price_tu_th: gearData.price_tu_th || null,
-          price_th_tu: gearData.price_th_tu || null,
-          price_week: gearData.price_week || null,
-          total_times_rented: 0,
-          revenue_generated: 0
-        })
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error creating gear:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    // 1. Update changed rows
+    for (const edited of editedRows) {
+      const original = originalRows.find((row: any) => row.id === edited.id);
+      if (!original) continue;
+      
+      // Only update if something changed
+      const changedFields: Record<string, any> = {};
+      for (const key of Object.keys(edited)) {
+        if (key === "id") continue;
+        if (edited[key] !== original[key]) {
+          changedFields[key] = edited[key];
+        }
       }
       
-      if (!data) {
-        return NextResponse.json({ error: "Failed to create gear item" }, { status: 500 });
+      if (Object.keys(changedFields).length > 0) {
+        const { error } = await supabase
+          .from("Gear")
+          .update(changedFields)
+          .eq("id", edited.id);
+        
+        if (error) errors.push(`Update failed for gear id ${edited.id}: ${error.message}`);
       }
-      
-      result = data;
+    }
+
+    // 2. Delete marked rows
+    for (const id of deletedRowIds) {
+      // Check if gear has active rentals before deleting
+      const { data: activeRentals } = await supabase
+        .from("Lent")
+        .select("id")
+        .eq("gear_id", id)
+        .eq("returned", false);
+
+      if (activeRentals && activeRentals.length > 0) {
+        errors.push(`Cannot delete gear id ${id}: has active rentals`);
+        continue;
+      }
+
+      const { error } = await supabase.from("Gear").delete().eq("id", id);
+      if (error) errors.push(`Delete failed for gear id ${id}: ${error.message}`);
+    }
+
+    if (errors.length === 0) {
+      return NextResponse.json({ success: true, errors }, { status: 200 });
     } else {
-      // Update existing item
-      const { data, error } = await supabase
-        .from("Gear")
-        .update({
-          name: gearData.name,
-          category: gearData.category,
-          num_available: gearData.num_available || 0,
-          description: gearData.description || null,
-          price_tu_th: gearData.price_tu_th || null,
-          price_th_tu: gearData.price_th_tu || null,
-          price_week: gearData.price_week || null,
-        })
-        .eq("id", gearData.id)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error updating gear:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      
-      if (!data) {
-        return NextResponse.json({ error: "Gear item not found" }, { status: 404 });
-      }
-      
-      result = data;
+      return NextResponse.json({ success: false, errors }, { status: 400 });
     }
-
-    return NextResponse.json({ success: true, gear: result });
-    
-  } catch (error) {
-    console.error("Gear save error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err?.message || "Unknown error" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = supabaseService;
     
     // Check authentication and admin status
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -233,10 +233,14 @@ export default function GearPage() {
                       <p className="font-bold text-orange-600">{cat.currentlyRented}</p>
                     </div>
                   </div>
-                  <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+                  <div className="mt-3 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${cat.utilizationRate}%` }}
+                      className={`bg-blue-600 h-2 rounded-full transition-all duration-500 ${
+                        cat.utilizationRate > 75 ? 'w-full' :
+                        cat.utilizationRate > 50 ? 'w-3/4' :
+                        cat.utilizationRate > 25 ? 'w-1/2' :
+                        cat.utilizationRate > 10 ? 'w-1/4' : 'w-1/12'
+                      }`}
                     ></div>
                   </div>
                 </div>

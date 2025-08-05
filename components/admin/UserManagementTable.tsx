@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,12 @@ import {
   ChevronDown, 
   Edit, 
   MoreHorizontal,
-  Shield,
-  ShieldCheck,
+  Users,
   UserCheck,
-  UserX
+  Shield,
+  Save,
+  Trash2,
+  CheckCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,13 +40,186 @@ interface UserManagementTableProps {
 export default function UserManagementTable({ members }: UserManagementTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "admin">("all");
-  const [sortField, setSortField] = useState<keyof Member>("joined_on");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [selectedUser, setSelectedUser] = useState<Member | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Filter and sort members
-  const filteredMembers = members.filter((member) => {
+  // Change tracking state for batch operations
+  const [originalRows, setOriginalRows] = useState<Member[]>(members || []);
+  const [editedRows, setEditedRows] = useState<Member[]>(members || []);
+  const [editedRowIndices, setEditedRowIndices] = useState<Set<number>>(new Set());
+  const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    setOriginalRows(members || []);
+    setEditedRows(members || []);
+    setEditedRowIndices(new Set());
+    setDeletedRows(new Set());
+  }, [members]);
+
+  const handleDelete = (userId: string) => {
+    const rowIndex = editedRows.findIndex(member => member.user_id === userId);
+    if (rowIndex === -1) return;
+
+    setDeletedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowIndex)) {
+        newSet.delete(rowIndex); // undelete
+      } else {
+        newSet.add(rowIndex); // mark for deletion
+      }
+      return newSet;
+    });
+  };
+
+  const handleUserEdit = (userId: string) => {
+    const member = editedRows.find(m => m.user_id === userId);
+    if (member) {
+      setSelectedUser(member);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    // Add a small delay to ensure proper cleanup
+    setTimeout(() => {
+      setSelectedUser(null);
+    }, 100);
+  };
+
+  const handleSaveUser = (updatedUser: Member) => {
+    // Update the edited rows with the new user data
+    const userIndex = editedRows.findIndex(u => u.user_id === updatedUser.user_id);
+    if (userIndex !== -1) {
+      const updated = editedRows.map((row, idx) =>
+        idx === userIndex ? updatedUser : row
+      );
+      setEditedRows(updated);
+      
+      // Check if this user was actually changed compared to original
+      const original = originalRows[userIndex];
+      let isEdited = false;
+      if (original) {
+        for (const key of Object.keys(updatedUser) as Array<keyof Member>) {
+          if (updatedUser[key] !== original[key]) {
+            isEdited = true;
+            break;
+          }
+        }
+      }
+      
+      setEditedRowIndices(prev => {
+        const newSet = new Set(prev);
+        if (isEdited) {
+          newSet.add(userIndex);
+        } else {
+          newSet.delete(userIndex);
+        }
+        return newSet;
+      });
+    }
+    // Use the new close handler
+    handleCloseModal();
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      // Only allow admins to submit changes
+      const resAuth = await fetch("/api/me");
+      if (!resAuth.ok) {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      let user: any = null;
+      try {
+        user = await resAuth.json();
+      } catch {
+        alert("Could not verify admin status. Please sign in again.");
+        return;
+      }
+      if (!user?.admin) {
+        alert("You do not have permission to make changes.");
+        return;
+      }
+
+      // Check if user is trying to remove their own admin status
+      const userChanges = editedRows.find(row => row.user_id === user.id);
+      const originalUser = originalRows.find(row => row.user_id === user.id);
+      if (userChanges && originalUser && originalUser.admin && !userChanges.admin) {
+        if (!confirm("You are removing your own admin privileges. You will lose access to admin functions. Are you sure?")) {
+          return;
+        }
+      }
+
+      // Only send changed or deleted rows
+      const changedRows = editedRows
+        .map((row, idx) => ({ row, idx }))
+        .filter(({ row, idx }) => {
+          if (deletedRows.has(idx)) return false;
+          const original = originalRows[idx];
+          if (!original) return false;
+          for (const key of Object.keys(row) as Array<keyof Member>) {
+            if (row[key] !== original[key]) return true;
+          }
+          return false;
+        })
+        .map(({ row }) => row);
+
+      const deletedRowIds = Array.from(deletedRows)
+        .map(idx => originalRows[idx]?.user_id)
+        .filter(Boolean);
+
+      if (changedRows.length === 0 && deletedRowIds.length === 0) {
+        alert("No changes to save.");
+        return;
+      }
+
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalRows,
+          editedRows: changedRows,
+          deletedRowIds,
+        }),
+      });
+
+      let result: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          result = await res.json();
+        } catch (jsonErr) {
+          throw new Error("Server returned invalid JSON.");
+        }
+      } else {
+        const text = await res.text();
+        throw new Error(
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+        );
+      }
+
+      if (res.ok && result.success) {
+        alert("Changes saved successfully!");
+        window.location.reload();
+      } else {
+        let errorMsg = "Some changes failed to save.";
+        if (result.errors && Array.isArray(result.errors)) {
+          errorMsg += "\n" + result.errors.join("\n");
+        } else if (result.error) {
+          errorMsg += "\n" + result.error;
+        } else if (result.message) {
+          errorMsg += "\n" + result.message;
+        }
+        alert(errorMsg);
+      }
+    } catch (err: any) {
+      alert("Network or server error: " + (err?.message || err));
+    }
+  };
+
+  // Filter members
+  const filteredMembers = editedRows.filter((member) => {
     const matchesSearch = !searchTerm || 
       (member.name && member.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       member.user_id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -56,84 +231,30 @@ export default function UserManagementTable({ members }: UserManagementTableProp
       (filterStatus === "admin" && member.admin);
 
     return matchesSearch && matchesFilter;
-  }).sort((a, b) => {
-    let aVal: any = a[sortField];
-    let bVal: any = b[sortField];
-
-    // Handle date sorting
-    if (sortField === "joined_on") {
-      aVal = aVal ? new Date(aVal).getTime() : 0;
-      bVal = bVal ? new Date(bVal).getTime() : 0;
-    }
-
-    // Handle string sorting
-    if (typeof aVal === "string" && typeof bVal === "string") {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
-    }
-
-    // Handle null values
-    if (aVal === null || aVal === undefined) aVal = 0;
-    if (bVal === null || bVal === undefined) bVal = 0;
-
-    if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-    return 0;
   });
 
-  const handleSort = (field: keyof Member) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const handleMemberAction = async (action: string, memberId: string) => {
-    const member = members.find(m => m.user_id === memberId);
-    
-    if ((action === "view" || action === "edit") && member) {
-      setSelectedUser(member);
-      setIsEditModalOpen(true);
-    } else {
-      console.log(`${action} for member ${memberId}`);
-      // TODO: Implement other actions like toggle status/admin
-    }
-  };
-
-  const handleSaveUser = async (updatedUser: Member) => {
-    try {
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedUser),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("User saved successfully:", result);
-        // Refresh the page to show updated data
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        console.error("Error saving user:", error.error);
-        alert(`Error saving user: ${error.error}`);
-      }
-    } catch (error) {
-      console.error("Error saving user:", error);
-      alert("Error saving user. Please try again.");
-    }
-  };
+  const hasChanges = editedRowIndices.size > 0 || deletedRows.size > 0;
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-lg md:text-xl">Member Directory</CardTitle>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Member Management
+            </CardTitle>
+            
+            {hasChanges && (
+              <Button onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700">
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes ({editedRowIndices.size + deletedRows.size})
+              </Button>
+            )}
+          </div>
+          
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -143,11 +264,12 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                 className="pl-10 w-full sm:w-64"
               />
             </div>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
                   <Filter className="h-4 w-4" />
-                  Filter
+                  Status
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -156,285 +278,144 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                   All Members
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus("active")}>
-                  Active Only
+                  Active Members
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus("inactive")}>
-                  Inactive Only
+                  Inactive Members
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus("admin")}>
-                  Admins Only
+                  Admin Members
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        {/* Mobile Card View */}
-        <div className="block md:hidden">
-          <div className="space-y-4 p-4">
-            {filteredMembers.map((member) => (
-              <div key={member.user_id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">
-                        {(member.name || member.user_id.substring(0, 2)).charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {member.name || "Unknown"}
-                      </div>
-                      <div className="text-xs text-gray-500 font-mono">
-                        {member.user_id.substring(0, 8)}...
-                      </div>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleMemberAction("view", member.user_id)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMemberAction("toggle-status", member.user_id)}>
-                        {member.valid ? (
-                          <>
-                            <UserX className="h-4 w-4 mr-2" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Activate
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMemberAction("toggle-admin", member.user_id)}>
-                        {member.admin ? (
-                          <>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Remove Admin
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="h-4 w-4 mr-2" />
-                            Make Admin
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="text-gray-600">
-                    Joined: {member.joined_on 
-                      ? new Date(member.joined_on).toLocaleDateString()
-                      : "N/A"
-                    }
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant={member.valid ? "default" : "secondary"}
-                    className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                  >
-                    <div className="flex items-center gap-1">
-                      {member.valid ? (
-                        <UserCheck className="h-3 w-3" />
-                      ) : (
-                        <UserX className="h-3 w-3" />
-                      )}
-                      {member.valid ? "Active" : "Inactive"}
-                    </div>
-                  </Badge>
-                  {member.admin ? (
-                    <Badge variant="destructive">
-                      <div className="flex items-center gap-1">
-                        <ShieldCheck className="h-3 w-3" />
-                        Admin
-                      </div>
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">
-                      <div className="flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        Member
-                      </div>
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-            {filteredMembers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No members found matching your criteria.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th 
-                  className="text-left py-3 px-6 font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center gap-2">
-                    Name
-                    {sortField === "name" && (
-                      <span className="text-xs">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="text-left py-3 px-6 font-medium text-gray-500">User ID</th>
-                <th 
-                  className="text-left py-3 px-6 font-medium text-gray-500 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort("joined_on")}
-                >
-                  <div className="flex items-center gap-2">
-                    Joined Date
-                    {sortField === "joined_on" && (
-                      <span className="text-xs">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="text-left py-3 px-6 font-medium text-gray-500">Status</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-500">Role</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMembers.map((member) => (
-                <tr key={member.user_id} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+      <CardContent>
+        {/* Grid View */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredMembers.map((member) => {
+            const originalIndex = editedRows.findIndex(r => r.user_id === member.user_id);
+            const isEdited = editedRowIndices.has(originalIndex);
+            const isDeleted = deletedRows.has(originalIndex);
+            
+            return (
+              <Card 
+                key={member.user_id} 
+                className={`hover:shadow-lg transition-all duration-200 group ${
+                  isDeleted ? 'bg-red-50 opacity-60 line-through' : 
+                  isEdited ? 'bg-yellow-50 border-yellow-200' : ''
+                }`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-sm font-medium text-blue-600">
-                          {(member.name || member.user_id.substring(0, 2)).charAt(0).toUpperCase()}
+                          {(member.name || member.user_id).charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="font-medium text-gray-900">
-                        {member.name || "Unknown"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600 font-mono">
-                    {member.user_id.substring(0, 8)}...
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600">
-                    {member.joined_on 
-                      ? new Date(member.joined_on).toLocaleDateString()
-                      : "N/A"
-                    }
-                  </td>
-                  <td className="py-4 px-6">
-                    <Badge 
-                      variant={member.valid ? "default" : "secondary"}
-                      className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                    >
-                      <div className="flex items-center gap-1">
-                        {member.valid ? (
-                          <UserCheck className="h-3 w-3" />
-                        ) : (
-                          <UserX className="h-3 w-3" />
-                        )}
-                        {member.valid ? "Active" : "Inactive"}
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <h3 className="font-semibold text-sm truncate">
+                          {member.name || "Unnamed User"}
+                        </h3>
+                        <p className="text-xs text-gray-600 truncate">{member.user_id}</p>
                       </div>
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-6">
-                    {member.admin ? (
-                      <Badge variant="destructive">
-                        <div className="flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" />
-                          Admin
-                        </div>
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">
-                        <div className="flex items-center gap-1">
-                          <Shield className="h-3 w-3" />
-                          Member
-                        </div>
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="py-4 px-6">
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleMemberAction("view", member.user_id)}>
+                        <DropdownMenuItem onClick={() => handleUserEdit(member.user_id)}>
                           <Edit className="h-4 w-4 mr-2" />
-                          View Details
+                          Edit Member
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleMemberAction("toggle-status", member.user_id)}>
-                          {member.valid ? (
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(member.user_id)}
+                          className={isDeleted ? "text-green-600" : "text-red-600"}
+                        >
+                          {isDeleted ? (
                             <>
-                              <UserX className="h-4 w-4 mr-2" />
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Undo Delete
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4 mr-2" />
                               Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleMemberAction("toggle-admin", member.user_id)}>
-                          {member.admin ? (
-                            <>
-                              <Shield className="h-4 w-4 mr-2" />
-                              Remove Admin
-                            </>
-                          ) : (
-                            <>
-                              <ShieldCheck className="h-4 w-4 mr-2" />
-                              Make Admin
                             </>
                           )}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredMembers.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No members found matching your criteria.
-            </div>
-          )}
+                  </div>
+                  
+                  <div className="mb-3 flex flex-wrap gap-1">
+                    <Badge 
+                      variant={member.valid ? "default" : "secondary"}
+                      className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                    >
+                      <UserCheck className="h-3 w-3 mr-1" />
+                      {member.valid ? "Active" : "Inactive"}
+                    </Badge>
+                    
+                    {member.admin && (
+                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {member.joined_on && (
+                    <p className="text-xs text-gray-600">
+                      Joined: {new Date(member.joined_on).toLocaleDateString()}
+                    </p>
+                  )}
+
+                  {/* Show edit/delete indicators */}
+                  {(isEdited || isDeleted) && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex items-center gap-1">
+                        {isEdited && (
+                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                            Modified
+                          </Badge>
+                        )}
+                        {isDeleted && (
+                          <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                            Marked for deletion
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
+        
+        {filteredMembers.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No members found matching your criteria.
+          </div>
+        )}
       </CardContent>
 
       {/* Edit Modal */}
-      <UserEditModal
-        user={selectedUser}
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedUser(null);
-        }}
-        onSave={handleSaveUser}
-      />
+      {selectedUser && (
+        <UserEditModal
+          key={selectedUser.user_id}
+          user={selectedUser}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseModal}
+          onSave={handleSaveUser}
+        />
+      )}
     </Card>
   );
 }
