@@ -1,9 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator"
-import React, { useState } from "react";
-import AdminSpreadsheet from "@/components/AdminSpreadsheet";
+import React from "react";
 import LentItemsTable from "@/components/LentItemsTable";
 
 export default async function MemberDashboard() {
@@ -103,31 +101,6 @@ export default async function MemberDashboard() {
     }
   }
 
-  // Fetch admin status
-  const isAdmin = memberships && memberships.admin;
-
-  // Fetch all lent items and all members if admin
-  let allLentItems: any[] = [];
-  let allMembers: any[] = [];
-  let allLentError: any = null;
-  let allMembersError: any = null;
-  if (isAdmin) {
-    const [
-      { data: lent, error: lentErr },
-      { data: members, error: membersErr },
-    ] = await Promise.all([
-      supabase
-        .from("Lent")
-        .select("id, lent_date, due_date, gear_id, user_id, returned")
-        .order("due_date", { ascending: true }),
-      supabase.from("Membership").select("joined_on, user_id, valid, admin, name"),
-    ]);
-    allLentItems = lent || [];
-    allMembers = members || [];
-    allLentError = lentErr;
-    allMembersError = membersErr;
-  }
-
   return (
     <div className="container mx-auto py-10">
       <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
@@ -142,30 +115,6 @@ export default async function MemberDashboard() {
         <p className="p-8 text-muted-foreground text-center">
           You have no items currently checked out.
         </p>
-      )}
-
-      {/* Admin spreadsheets */}
-      {isAdmin && (
-        <div className="mt-12 space-y-12">
-          <Separator />
-          <h2 className="text-3xl font-bold mb-6">Admin Spreadsheets</h2>
-          {/* Lent Items Spreadsheet */}
-          <AdminSpreadsheet
-            title="Lent Items"
-            columns={["lent_date", "due_date", "gear_id", "user_id", "returned"]}
-            data={allLentItems}
-            error={allLentError}
-            tableName="Lent"
-          />
-          {/* Members Spreadsheet */}
-          <AdminSpreadsheet
-            title="Memberships"
-            columns={["user_id", "name", "joined_on", "valid", "admin"]}
-            data={allMembers}
-            error={allMembersError}
-            tableName="Membership"
-          />
-        </div>
       )}
     </div>
   );

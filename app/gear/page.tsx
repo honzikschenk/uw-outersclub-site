@@ -48,27 +48,27 @@ export default async function Page() {
       </Alert>
       {categories && categories.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {categories.map((cat) => (
+          {Array.from(new Set(categories.map((cat) => cat.category))).map((category) => (
             <Link
-              key={cat.category}
-              href={`/gear/${encodeURIComponent(cat.category)}`}
+              key={category}
+              href={`/gear/${encodeURIComponent(category)}`}
             >
               <Card className="shadow-md transition-transform hover:scale-105 cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="capitalize">{cat.category}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Image
-                    src={`/categories/${encodeURIComponent(cat.category)}.jpg`}
-                    alt={`${cat.category} image`}
-                    width={300}
-                    height={300}
-                    className="w-full h-80 object-cover rounded-t-md mb-4"
-                  />
-                  <div className="text-muted-foreground">
-                    View all gear in this category
-                  </div>
-                </CardContent>
+          <CardHeader>
+            <CardTitle className="capitalize">{category}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Image
+              src={`/categories/${encodeURIComponent(category)}.jpg`}
+              alt={`${category} image`}
+              width={300}
+              height={300}
+              className="w-full h-80 object-cover rounded-t-md mb-4"
+            />
+            <div className="text-muted-foreground">
+              View all gear in this category
+            </div>
+          </CardContent>
               </Card>
             </Link>
           ))}

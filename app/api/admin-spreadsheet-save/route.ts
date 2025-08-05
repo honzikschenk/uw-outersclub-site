@@ -9,26 +9,45 @@ export async function POST(req: Request) {
 
     // 1. Update changed rows
     for (const edited of editedRows) {
-      const original = originalRows.find((row: any) => row.id === edited.id);
+      let original;
+      if (tableName === 'Membership') {
+        original = originalRows.find((row: any) => row.user_id === edited.user_id);
+      } else {
+        original = originalRows.find((row: any) => row.id === edited.id);
+      }
       if (!original) continue;
+      
       // Only update if something changed
       const changedFields: Record<string, any> = {};
       for (const key of Object.keys(edited)) {
-        if (key === "id") continue;
+        if (key === "id" || (tableName === 'Membership' && key === "user_id")) continue;
         if (edited[key] !== original[key]) {
           changedFields[key] = edited[key];
         }
       }
+      
       if (Object.keys(changedFields).length > 0) {
-        const { error } = await supabase.from(tableName).update(changedFields).eq("id", edited.id);
-        if (error) errors.push(`Update failed for id ${edited.id}: ${error.message}`);
+        let updateQuery;
+        if (tableName === 'Membership') {
+          updateQuery = supabase.from(tableName).update(changedFields).eq("user_id", edited.user_id);
+        } else {
+          updateQuery = supabase.from(tableName).update(changedFields).eq("id", edited.id);
+        }
+        const { error } = await updateQuery;
+        if (error) errors.push(`Update failed for ${tableName === 'Membership' ? 'user_id' : 'id'} ${edited.id || edited.user_id}: ${error.message}`);
       }
     }
 
     // 2. Delete marked rows
     for (const id of deletedRowIds) {
-      const { error } = await supabase.from(tableName).delete().eq("id", id);
-      if (error) errors.push(`Delete failed for id ${id}: ${error.message}`);
+      let deleteQuery;
+      if (tableName === 'Membership') {
+        deleteQuery = supabase.from(tableName).delete().eq("user_id", id);
+      } else {
+        deleteQuery = supabase.from(tableName).delete().eq("id", id);
+      }
+      const { error } = await deleteQuery;
+      if (error) errors.push(`Delete failed for ${tableName === 'Membership' ? 'user_id' : 'id'} ${id}: ${error.message}`);
     }
 
     if (errors.length === 0) {

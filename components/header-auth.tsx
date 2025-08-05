@@ -14,14 +14,16 @@ export default async function AuthButton() {
 
   // Fetch user's name from Membership table if logged in
   let userName = null;
+  let isAdmin = false;
   if (user) {
     const { data: membership } = await supabase
       .from("Membership")
-      .select("name")
+      .select("name, admin")
       .eq("user_id", user.id)
       .maybeSingle();
     
     userName = membership?.name;
+    isAdmin = membership?.admin === true;
   }
 
   if (!hasEnvVars) {
@@ -62,6 +64,11 @@ export default async function AuthButton() {
   }
   return user ? (
     <div className="flex items-center gap-4">
+      {isAdmin && (
+        <Button asChild variant="secondary" size="sm">
+          <Link href="/admin">Admin</Link>
+        </Button>
+      )}
       <Button asChild variant="link">
         <Link href="/member">Hey, {userName || user.email}!</Link>
       </Button>
