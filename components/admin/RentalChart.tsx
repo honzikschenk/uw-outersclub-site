@@ -265,14 +265,9 @@ export default function RentalChart({ rentals }: RentalChartProps) {
                 <Legend 
                   verticalAlign="bottom" 
                   height={36}
-                  formatter={(value) => (
-                  <span className="capitalize text-sm">{value}</span>
+                  formatter={(value: string) => (
+                    <span className="capitalize text-sm">{value}</span>
                   )}
-                  payload={categoryData.map((entry, index) => ({
-                  value: entry.category,
-                  type: "square",
-                  color: colors[index % colors.length],
-                  }))}
                 />
                 </PieChart>
             </ResponsiveContainer>
