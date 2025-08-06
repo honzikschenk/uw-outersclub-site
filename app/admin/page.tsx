@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users, Package, Clock, AlertTriangle, TrendingUp, Calendar, FileText } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import AdminSpreadsheet from "@/components/AdminSpreadsheet";
+import QuickReturnRentals from "@/components/admin/QuickReturnRentals";
 import Link from "next/link";
 
 export default async function AdminOverview() {
@@ -88,6 +88,30 @@ export default async function AdminOverview() {
     item.lent_date && new Date(item.lent_date) >= weekAgo
   ) || [];
 
+  // Create lookup maps for enhanced rentals
+  const gearMap = allGear?.reduce((acc, g) => ({ ...acc, [g.id]: g }), {} as Record<number, any>) || {};
+  const userMap = allMembers?.reduce((acc, u) => ({ ...acc, [u.user_id]: u }), {} as Record<string, any>) || {};
+
+  // Enhance rentals with gear and user info for QuickReturnRentals component
+  const enhancedRentals = allLentItems?.map(rental => {
+    let status: 'returned' | 'overdue' | 'active';
+    if (rental.returned) {
+      status = 'returned';
+    } else if (rental.due_date && new Date(rental.due_date) < now) {
+      status = 'overdue';
+    } else {
+      status = 'active';
+    }
+
+    return {
+      ...rental,
+      gearName: gearMap[rental.gear_id]?.name || `Gear #${rental.gear_id}`,
+      gearCategory: gearMap[rental.gear_id]?.category || 'Unknown',
+      userName: userMap[rental.user_id]?.name || 'Unknown User',
+      status
+    };
+  }) || [];
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
@@ -150,57 +174,11 @@ export default async function AdminOverview() {
         </Card>
       </div>
 
-      {/* Admin Spreadsheets */}
+      {/* Quick Return rentals */}
       <div className="space-y-8">
         <Separator />
         
-        {/* Rental Management */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-            <FileText className="h-6 w-6 text-green-600" />
-            Rental Management
-          </h2>
-          <p className="text-gray-600 mb-4">Track gear rentals and mark items as returned</p>
-          <AdminSpreadsheet
-            title="Lent Items"
-            columns={["lent_date", "due_date", "gear_id", "user_id", "returned"]}
-            data={allLentItems || []}
-            error={lentError}
-            tableName="Lent"
-          />
-        </div>
-
-        {/* Gear Management */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-            <Package className="h-6 w-6 text-purple-600" />
-            Gear Inventory
-          </h2>
-          <p className="text-gray-600 mb-4">Manage gear details, pricing, and availability</p>
-          <AdminSpreadsheet
-            title="Gear Items"
-            columns={["name", "category", "num_available", "description", "price_tu_th", "price_th_tu", "price_week"]}
-            data={allGear || []}
-            error={gearError}
-            tableName="Gear"
-          />
-        </div>
-
-        {/* Member Management */}
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" />
-            Member Management
-          </h2>
-          <p className="text-gray-600 mb-4">Manage member accounts and admin privileges</p>
-          <AdminSpreadsheet
-            title="Members"
-            columns={["name", "joined_on", "valid", "admin"]}
-            data={allMembers || []}
-            error={membersError}
-            tableName="Membership"
-          />
-        </div>
+        <QuickReturnRentals rentals={enhancedRentals} />
       </div>
     </div>
   );

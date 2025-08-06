@@ -46,10 +46,6 @@ export default async function UsersPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-2">Manage member accounts and permissions</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-          <Users className="h-4 w-4 mr-2" />
-          Add New Member
-        </Button>
       </div>
 
       {/* Statistics Cards */}
@@ -95,83 +91,6 @@ export default async function UsersPage() {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{recentJoiners.length}</div>
             <p className="text-xs text-gray-600">Last 30 days</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-green-600" />
-              Active Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600 mb-2">{activeMembers.length}</div>
-            <div className="space-y-2">
-              {activeMembers.slice(0, 3).map((member) => (
-                <div key={member.user_id} className="flex items-center justify-between text-sm">
-                  <span>{member.name || 'Unknown'}</span>
-                  <div className="flex gap-1">
-                    <Badge variant="secondary" className="text-xs">Active</Badge>
-                    {member.admin && <Badge variant="destructive" className="text-xs">Admin</Badge>}
-                  </div>
-                </div>
-              ))}
-              {activeMembers.length > 3 && (
-                <p className="text-xs text-gray-600">+{activeMembers.length - 3} more</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <UserX className="h-5 w-5 text-red-600" />
-              Inactive Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-red-600 mb-2">{inactiveMembers.length}</div>
-            <div className="space-y-2">
-              {inactiveMembers.slice(0, 3).map((member) => (
-                <div key={member.user_id} className="flex items-center justify-between text-sm">
-                  <span>{member.name || 'Unknown'}</span>
-                  <Badge variant="outline" className="text-xs">Inactive</Badge>
-                </div>
-              ))}
-              {inactiveMembers.length > 3 && (
-                <p className="text-xs text-gray-600">+{inactiveMembers.length - 3} more</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-orange-600" />
-              Recent Joiners
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-600 mb-2">{recentJoiners.length}</div>
-            <div className="space-y-2">
-              {recentJoiners.slice(0, 3).map((member) => (
-                <div key={member.user_id} className="flex items-center justify-between text-sm">
-                  <span>{member.name || 'Unknown'}</span>
-                  <span className="text-xs text-gray-600">
-                    {member.joined_on ? new Date(member.joined_on).toLocaleDateString() : 'N/A'}
-                  </span>
-                </div>
-              ))}
-              {recentJoiners.length > 3 && (
-                <p className="text-xs text-gray-600">+{recentJoiners.length - 3} more</p>
-              )}
-            </div>
           </CardContent>
         </Card>
       </div>

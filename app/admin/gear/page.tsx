@@ -108,8 +108,12 @@ export default function GearPage() {
 
   // Calculate gear statistics
   const totalGear = gear.length;
-  const totalAvailableUnits = gear.reduce((sum, g) => sum + (g.num_available || 0), 0);
-  const currentlyRentedCount = rentals.filter(r => !r.returned).length;
+  const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+  const currentlyRentedCount = rentals.filter(r => {
+    const lentDate = new Date(r.lent_date).toISOString().split('T')[0];
+    return !r.returned && lentDate <= today;
+  }).length;
+  const totalAvailableUnits = gear.reduce((sum, g) => sum + (g.num_available || 0), 0) - currentlyRentedCount;
   
   // Group gear by category
   const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
@@ -117,9 +121,10 @@ export default function GearPage() {
     const categoryGear = gear.filter(g => g.category === category);
     const totalUnits = categoryGear.reduce((sum, g) => sum + (g.num_available || 0), 0);
     const totalItems = categoryGear.length;
-    const rentalCount = rentals.filter(r => 
-      categoryGear.some(g => g.id === r.gear_id) && !r.returned
-    ).length;
+    const rentalCount = rentals.filter(r => {
+      const lentDate = new Date(r.lent_date).toISOString().split('T')[0];
+      return categoryGear.some(g => g.id === r.gear_id) && !r.returned && lentDate <= today;
+    }).length;
     
     return {
       category,
@@ -137,7 +142,7 @@ export default function GearPage() {
     return { ...g, rentalCount };
   }).sort((a, b) => b.rentalCount - a.rentalCount);
 
-  const popularGear = gearRentalCounts.slice(0, 5);
+  const popularGear = gearRentalCounts.slice(0,5);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -170,12 +175,12 @@ export default function GearPage() {
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Units</CardTitle>
+            <CardTitle className="text-sm font-medium">Current Units</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{totalAvailableUnits}</div>
-            <p className="text-xs text-gray-600">Total units available</p>
+            <p className="text-xs text-gray-600">Total units available currently</p>
           </CardContent>
         </Card>
 
@@ -203,51 +208,7 @@ export default function GearPage() {
       </div>
 
       {/* Category Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Category Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {categoryStats.map(cat => (
-                <div key={cat.category} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium capitalize">{cat.category}</h4>
-                    <span className="text-sm text-gray-600">{cat.utilizationRate}% utilized</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Items:</span>
-                      <p className="font-bold">{cat.total}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Available:</span>
-                      <p className="font-bold text-green-600">{cat.availableUnits}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Rented:</span>
-                      <p className="font-bold text-orange-600">{cat.currentlyRented}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`bg-blue-600 h-2 rounded-full transition-all duration-500 ${
-                        cat.utilizationRate > 75 ? 'w-full' :
-                        cat.utilizationRate > 50 ? 'w-3/4' :
-                        cat.utilizationRate > 25 ? 'w-1/2' :
-                        cat.utilizationRate > 10 ? 'w-1/4' : 'w-1/12'
-                      }`}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-8">
 
         <Card>
           <CardHeader>

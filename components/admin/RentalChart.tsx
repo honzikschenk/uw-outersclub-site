@@ -224,7 +224,7 @@ export default function RentalChart({ rentals }: RentalChartProps) {
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+                <PieChart>
                 <Pie
                   data={categoryData}
                   cx="50%"
@@ -234,41 +234,47 @@ export default function RentalChart({ rentals }: RentalChartProps) {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
+                  nameKey="category"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={colors[index % colors.length]} 
-                    />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={colors[index % colors.length]} 
+                  />
                   ))}
                 </Pie>
                 <Tooltip 
                   content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
-                          <p className="font-medium capitalize">{data.category}</p>
-                          <p className="text-blue-600">
-                            {`${data.count} rentals`}
-                          </p>
-                          <p className="text-gray-600">
-                            {`${((data.count / currentMonthRentals.length) * 100).toFixed(1)}% of total`}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                    <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                      <p className="font-medium capitalize">{data.category}</p>
+                      <p className="text-blue-600">
+                      {`${data.count} rentals`}
+                      </p>
+                      <p className="text-gray-600">
+                      {`${((data.count / currentMonthRentals.length) * 100).toFixed(1)}% of total`}
+                      </p>
+                    </div>
+                    );
+                  }
+                  return null;
                   }}
                 />
                 <Legend 
                   verticalAlign="bottom" 
                   height={36}
                   formatter={(value) => (
-                    <span className="capitalize text-sm">{value}</span>
+                  <span className="capitalize text-sm">{value}</span>
                   )}
+                  payload={categoryData.map((entry, index) => ({
+                  value: entry.category,
+                  type: "square",
+                  color: colors[index % colors.length],
+                  }))}
                 />
-              </PieChart>
+                </PieChart>
             </ResponsiveContainer>
           </div>
           

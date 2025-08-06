@@ -78,6 +78,48 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
     });
   };
 
+  const handleToggleReturned = (rentalId: number) => {
+    const rentalIndex = editedRows.findIndex(rental => rental.id === rentalId);
+    if (rentalIndex === -1) return;
+
+    const updatedRentals = editedRows.map((rental, idx) => {
+      if (idx === rentalIndex) {
+        const updatedRental = { 
+          ...rental, 
+          returned: !rental.returned,
+          status: !rental.returned ? 'returned' : 'active' as 'returned' | 'overdue' | 'active'
+        };
+        return updatedRental;
+      }
+      return rental;
+    });
+
+    setEditedRows(updatedRentals);
+
+    // Check if this rental was actually changed compared to original
+    const original = originalRows[rentalIndex];
+    const updatedRental = updatedRentals[rentalIndex];
+    let isEdited = false;
+    if (original && updatedRental) {
+      for (const key of Object.keys(updatedRental) as Array<keyof EnhancedRental>) {
+        if (updatedRental[key] !== original[key]) {
+          isEdited = true;
+          break;
+        }
+      }
+    }
+
+    setEditedRowIndices(prev => {
+      const newSet = new Set(prev);
+      if (isEdited) {
+        newSet.add(rentalIndex);
+      } else {
+        newSet.delete(rentalIndex);
+      }
+      return newSet;
+    });
+  };
+
   const handleRentalEdit = (rentalId: number) => {
     const rental = editedRows.find(r => r.id === rentalId);
     if (rental) {
@@ -357,6 +399,22 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                         <DropdownMenuItem onClick={() => handleRentalEdit(rental.id)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Rental
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleToggleReturned(rental.id)}
+                          className="text-blue-600"
+                        >
+                          {rental.returned ? (
+                            <>
+                              <Package className="h-4 w-4 mr-2" />
+                              Mark as Not Returned
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark as Returned
+                            </>
+                          )}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDelete(rental.id)}

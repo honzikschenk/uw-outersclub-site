@@ -387,7 +387,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                         )}
                         {isDeleted && (
                           <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
-                            Marked for deletion
+                            Marked for deactivation
                           </Badge>
                         )}
                       </div>
