@@ -9,7 +9,8 @@ export default async function Page({
 }: {
   params: Promise<{ category: string, product: string }>;
 }) {
-  const { category, product } = await params
+  const { category: rawCategory, product } = await params
+  const category = decodeURIComponent(rawCategory)
 
   const supabase = await createClient()
   // Fetch product details
@@ -33,8 +34,8 @@ export default async function Page({
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
+    <div className="container mx-auto py-4 px-4 sm:py-10 sm:px-6 lg:px-8">
+      <nav className="mb-4 sm:mb-6 text-sm text-muted-foreground flex gap-2 items-center">
         <Link href="/gear" className="hover:underline">Gear Categories</Link>
         <span>/</span>
         <Link href={`/gear/${encodeURIComponent(category)}`} className="hover:underline capitalize">{category}</Link>
@@ -42,7 +43,7 @@ export default async function Page({
         <span>{item.name}</span>
       </nav>
       {item.image_url && (
-        <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-6">
+        <div className="relative w-full h-48 sm:h-64 bg-gray-100 rounded-lg overflow-hidden mb-4 sm:mb-6">
           <Image
             src={item.image_url}
             alt={item.name}
@@ -53,20 +54,20 @@ export default async function Page({
           />
         </div>
       )}
-      <div className="bg-white/90 rounded-lg p-8">
+      <div className="bg-white/90 rounded-lg p-4 sm:p-8">
         <div className="mb-4">
-          <h1 className="text-3xl font-bold mb-1">{item.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1">{item.name}</h1>
           <div className="text-muted-foreground text-base mb-2 capitalize">{item.category}</div>
         </div>
-        <div className="mb-2 text-lg text-gray-700 leading-relaxed">
+        <div className="mb-2 text-base sm:text-lg text-gray-700 leading-relaxed">
           {item.description}
         </div>
-        <div className="flex flex-col gap-2 mb-6">
-          <span className="text-xl font-semibold text-primary">Rental Prices:</span>
-          <span className="text-base text-gray-700">Tuesday–Thursday: ${item.price_tu_th ?? 'N/A'}</span>
-          <span className="text-base text-gray-700">Thursday–Tuesday: ${item.price_th_tu ?? 'N/A'}</span>
-          <span className="text-base text-gray-700">Full Week: ${item.price_week ?? 'N/A'}</span>
-          <span className="text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
+        <div className="flex flex-col gap-2 mb-4 sm:mb-6">
+          <span className="text-lg sm:text-xl font-semibold text-primary">Rental Prices:</span>
+          <span className="text-sm sm:text-base text-gray-700">Tuesday–Thursday: ${item.price_tu_th ?? 'N/A'}</span>
+          <span className="text-sm sm:text-base text-gray-700">Thursday–Tuesday: ${item.price_th_tu ?? 'N/A'}</span>
+          <span className="text-sm sm:text-base text-gray-700">Full Week: ${item.price_week ?? 'N/A'}</span>
+          <span className="text-sm sm:text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
         </div>
         <ProductReservationClient user={user} item={item} />
       </div>

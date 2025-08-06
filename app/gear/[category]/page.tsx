@@ -8,7 +8,8 @@ export default async function Page({
 }: {
   params: Promise<{ category: string }>;
 }) {
-  const { category } = await params
+  const { category: rawCategory } = await params
+  const category = decodeURIComponent(rawCategory)
 
   const supabase = await createClient()
   const { data: items, error } = await supabase
@@ -32,7 +33,7 @@ export default async function Page({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {items.map((item) => (
             <Card key={item.id} className="shadow-md transition-transform hover:scale-105">
-              <a href={`/gear/${category}/${item.id}`} className="block">
+              <a href={`/gear/${encodeURIComponent(category)}/${item.id}`} className="block">
             <CardHeader>
               <CardTitle>{item.name}</CardTitle>
             </CardHeader>

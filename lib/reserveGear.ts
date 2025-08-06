@@ -34,32 +34,14 @@ export async function reserveCartItems({
     return { error: "Your membership has expired or is not valid. Please contact an admin." };
   }
 
-  // 2. Check if user already has overlapping rentals
-  const { data: activeLent, error: lentError } = await supabase
-    .from("Lent")
-    .select("id, lent_date, due_date, gear_id, returned")
-    .eq("user_id", userId)
-    .neq("returned", true);
-
-  if (lentError) return { error: "Could not check active rentals." };
-
-  // Check for overlaps with existing rentals
-  for (const cartItem of cartItems) {
-    const requestedStart = cartItem.selectedDates.from.getTime();
-    const requestedEnd = cartItem.selectedDates.to.getTime();
-
-    const overlap = activeLent?.some((rental: any) => {
-      const lentStart = new Date(rental.lent_date).getTime();
-      const lentEnd = new Date(rental.due_date).getTime();
-      const oneDay = 24 * 60 * 60 * 1000;
-      return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;
-    });
-
-    if (overlap) {
-      return {
-        error: `You already have overlapping rentals for the selected dates.`,
-      };
-    }
+  // 2. Check for duplicate items in the current cart
+  const gearIdsInCart = cartItems.map(item => item.id);
+  const uniqueGearIds = new Set(gearIdsInCart);
+  
+  if (gearIdsInCart.length !== uniqueGearIds.size) {
+    return {
+      error: "You cannot rent the same item multiple times in one reservation.",
+    };
   }
 
   // 3. Check availability for all items
@@ -78,23 +60,49 @@ export async function reserveCartItems({
       return { error: `${cartItem.name} is not available for reservation.` };
     }
 
-    // Check for overlapping rentals for this specific item
-    const { data: overlappingLent, error: overlapError } = await supabase
+    // Check if the user already has this specific item rented for overlapping dates
+    const { data: userRentals, error: userRentalError } = await supabase
       .from("Lent")
-      .select("id, lent_date, due_date, returned")
+      .select("id, lent_date, due_date")
       .eq("gear_id", cartItem.id)
+      .eq("user_id", userId)
       .neq("returned", true);
 
-    if (overlapError)
+    if (userRentalError)
       return {
-        error: `Could not check availability for ${cartItem.name}.`,
+        error: `Could not check your existing rentals for ${cartItem.name}.`,
       };
 
     const requestedStart = cartItem.selectedDates.from.getTime();
     const requestedEnd = cartItem.selectedDates.to.getTime();
     const oneDay = 24 * 60 * 60 * 1000;
 
-    const overlapCount = (overlappingLent || []).filter((rental: any) => {
+    // Check if user already has this item for overlapping dates
+    const userHasOverlap = (userRentals || []).some((rental: any) => {
+      const lentStart = new Date(rental.lent_date).getTime();
+      const lentEnd = new Date(rental.due_date).getTime();
+      return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;
+    });
+
+    if (userHasOverlap) {
+      return {
+        error: `You already have ${cartItem.name} rented for overlapping dates.`,
+      };
+    }
+
+    // Check for overlapping rentals from all users for this specific item
+    const { data: allRentals, error: allRentalsError } = await supabase
+      .from("Lent")
+      .select("id, lent_date, due_date, returned")
+      .eq("gear_id", cartItem.id)
+      .neq("returned", true);
+
+    if (allRentalsError)
+      return {
+        error: `Could not check availability for ${cartItem.name}.`,
+      };
+
+    const overlapCount = (allRentals || []).filter((rental: any) => {
       const lentStart = new Date(rental.lent_date).getTime();
       const lentEnd = new Date(rental.due_date).getTime();
       return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;

@@ -211,48 +211,49 @@ export default function ProductReservationClient({
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-sm bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4 mt-8">
+		<div className="mx-auto w-full max-w-sm bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 flex flex-col gap-4 mt-8">
 			<h2 className="text-lg font-semibold text-primary mb-2 text-center">
 				{itemInCart ? "Update Reservation" : "Reserve this item"}
 			</h2>
 			
 			<div className="flex flex-col gap-2">
 				<label className="text-sm font-medium mb-1">Select Rental Period</label>
-				<Calendar
-					mode="range"
-					selected={{ from: selectedRange.from ?? undefined, to: selectedRange.to ?? undefined }}
-					onSelect={(range: { from?: Date; to?: Date } | undefined) => {
-						setError(null);
-						setSuccess(null);
-						if (!range?.from) {
-							setSelectedRange({ from: null, to: null });
-							return;
-						}
-						
-						const newRange = { from: range.from, to: range.to || null };
-						setSelectedRange(newRange);
-						
-						// Auto-complete common rental patterns
-						if (range.from && !range.to) {
-							const dayOfWeek = range.from.getDay();
-							let autoTo: Date | null = null;
-							
-							if (dayOfWeek === 2) { // Tuesday
-								// Auto-select Thursday (2 days later)
-								autoTo = new Date(range.from);
-								autoTo.setDate(autoTo.getDate() + 2);
-							} else if (dayOfWeek === 4) { // Thursday
-								// Auto-select next Tuesday (5 days later)
-								autoTo = new Date(range.from);
-								autoTo.setDate(autoTo.getDate() + 5);
+				<div className="flex justify-center">
+					<Calendar
+						mode="range"
+						selected={{ from: selectedRange.from ?? undefined, to: selectedRange.to ?? undefined }}
+						onSelect={(range: { from?: Date; to?: Date } | undefined) => {
+							setError(null);
+							setSuccess(null);
+							if (!range?.from) {
+								setSelectedRange({ from: null, to: null });
+								return;
 							}
 							
-							if (autoTo) {
-								setSelectedRange({ from: range.from, to: autoTo });
+							const newRange = { from: range.from, to: range.to || null };
+							setSelectedRange(newRange);
+							
+							// Auto-complete common rental patterns
+							if (range.from && !range.to) {
+								const dayOfWeek = range.from.getDay();
+								let autoTo: Date | null = null;
+								
+								if (dayOfWeek === 2) { // Tuesday
+									// Auto-select Thursday (2 days later)
+									autoTo = new Date(range.from);
+									autoTo.setDate(autoTo.getDate() + 2);
+								} else if (dayOfWeek === 4) { // Thursday
+									// Auto-select next Tuesday (5 days later)
+									autoTo = new Date(range.from);
+									autoTo.setDate(autoTo.getDate() + 5);
+								}
+								
+								if (autoTo) {
+									setSelectedRange({ from: range.from, to: autoTo });
+								}
 							}
-						}
-					}}
-					className="rounded-md border"
+						}}
+						className="rounded-md border w-fit max-w-full overflow-x-auto"
 					disabled={(date) => {
 						// Disable past dates
 						if (date < new Date()) return true;
@@ -273,7 +274,8 @@ export default function ProductReservationClient({
 							date.toDateString() === unavailableDate.toDateString()
 						);
 					}}
-				/>
+					/>
+				</div>
 			</div>
 
 			{rentalType && price > 0 && (
