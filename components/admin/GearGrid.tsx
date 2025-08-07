@@ -39,9 +39,10 @@ interface GearItem {
 
 interface GearGridProps {
   gear: GearItem[];
+  existingCategories?: string[];
 }
 
-export default function GearGrid({ gear }: GearGridProps) {
+export default function GearGrid({ gear, existingCategories = [] }: GearGridProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "available" | "out_of_stock">("all");
@@ -430,6 +431,7 @@ export default function GearGrid({ gear }: GearGridProps) {
           setSelectedGear(null);
         }}
         onSave={handleSaveGear}
+        existingCategories={existingCategories}
       />
     </Card>
   );

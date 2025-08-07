@@ -3,12 +3,42 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { originalRows, editedRows, deletedRowIds } = await request.json();
+    const requestBody = await request.json();
     const supabase = supabaseService;
     let errors: string[] = [];
 
+    // Check if this is a single gear creation request (new gear)
+    if (requestBody.name !== undefined && !requestBody.originalRows) {
+      // This is a single gear creation request
+      const gearData = {
+        name: requestBody.name,
+        category: requestBody.category,
+        num_available: requestBody.num_available || 0,
+        description: requestBody.description || '',
+        price_tu_th: requestBody.price_tu_th,
+        price_th_tu: requestBody.price_th_tu,
+        price_week: requestBody.price_week,
+        total_times_rented: 0,
+        revenue_generated: 0
+      };
+
+      const { data, error } = await supabase
+        .from("Gear")
+        .insert([gearData])
+        .select();
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, data }, { status: 201 });
+    }
+
+    // This is a bulk operations request (original functionality)
+    const { originalRows, editedRows, deletedRowIds } = requestBody;
+
     // 1. Update changed rows
-    for (const edited of editedRows) {
+    for (const edited of editedRows || []) {
       const original = originalRows.find((row: any) => row.id === edited.id);
       if (!original) continue;
       
@@ -32,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Delete marked rows
-    for (const id of deletedRowIds) {
+    for (const id of deletedRowIds || []) {
       // Check if gear has active rentals before deleting
       const { data: activeRentals } = await supabase
         .from("Lent")

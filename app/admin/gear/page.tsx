@@ -56,15 +56,15 @@ export default function GearPage() {
 
   const handleSaveGear = async (gearData: any) => {
     try {
+      // Remove the temporary ID for new gear creation
+      const { id, ...gearDataWithoutId } = gearData;
+      
       const response = await fetch('/api/admin/gear', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...gearData,
-          id: Date.now(), // Temporary ID for new items
-        }),
+        body: JSON.stringify(gearDataWithoutId),
       });
 
       if (response.ok) {
@@ -248,7 +248,7 @@ export default function GearPage() {
       <GearCategoryChart categoryStats={categoryStats} />
 
       {/* Gear Grid */}
-      <GearGrid gear={gear} />
+      <GearGrid gear={gear} existingCategories={categories} />
 
       {/* Add New Gear Modal */}
       <GearEditModal
@@ -267,6 +267,7 @@ export default function GearPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleSaveGear}
+        existingCategories={categories}
       />
     </div>
   );

@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, DollarSign, Hash, FileText, Archive, X } from "lucide-react";
+import { Package, DollarSign, Hash, FileText, Archive, X, ChevronDown, Plus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface GearItem {
   id: number;
@@ -24,10 +31,31 @@ interface GearEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (gear: GearItem) => void;
+  existingCategories?: string[];
 }
 
-export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEditModalProps) {
+export default function GearEditModal({ gear, isOpen, onClose, onSave, existingCategories = [] }: GearEditModalProps) {
   const [formData, setFormData] = useState<GearItem | null>(gear);
+  const [isCreatingNewCategory, setIsCreatingNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  // Predefined categories based on what's available
+  const predefinedCategories = [
+    "backpacking",
+    "climbing",
+    "cooking",
+    "miscellaneous",
+    "sleeping items",
+    "tents",
+    "watersports",
+    "winter"
+  ];
+
+  // Combine predefined and existing categories, remove duplicates
+  const allCategories = Array.from(new Set([
+    ...predefinedCategories,
+    ...existingCategories
+  ])).sort();
 
   // Update form data when gear prop changes
   React.useEffect(() => {
@@ -38,7 +66,12 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        if (isCreatingNewCategory) {
+          setIsCreatingNewCategory(false);
+          setNewCategoryName("");
+        } else {
+          onClose();
+        }
       }
     };
     
@@ -51,7 +84,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isCreatingNewCategory]);
 
   if (!formData || !isOpen) return null;
 
@@ -62,6 +95,37 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
 
   const handleInputChange = (field: keyof GearItem, value: string | number | null) => {
     setFormData(prev => prev ? { ...prev, [field]: value } : null);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    handleInputChange('category', category);
+    setIsCreatingNewCategory(false);
+    setNewCategoryName("");
+  };
+
+  const handleCreateNewCategory = () => {
+    if (newCategoryName.trim()) {
+      const normalizedName = newCategoryName.trim().toLowerCase();
+      
+      // Check if category already exists
+      if (allCategories.includes(normalizedName)) {
+        alert("This category already exists. Please choose a different name.");
+        return;
+      }
+      
+      handleInputChange('category', normalizedName);
+      setIsCreatingNewCategory(false);
+      setNewCategoryName("");
+    }
+  };
+
+  const handleNewCategoryKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCreateNewCategory();
+    } else if (e.key === 'Escape') {
+      setIsCreatingNewCategory(false);
+      setNewCategoryName("");
+    }
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -114,13 +178,70 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave }: GearEdi
               
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  placeholder="Enter category"
-                  className="w-full"
-                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                    >
+                      <span className={formData.category ? "capitalize" : "text-gray-500"}>
+                        {formData.category || "Select a category"}
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                    {allCategories.map((category) => (
+                      <DropdownMenuItem
+                        key={category}
+                        onClick={() => handleCategorySelect(category)}
+                        className="capitalize cursor-pointer"
+                      >
+                        {category}
+                      </DropdownMenuItem>
+                    ))}
+                    {allCategories.length > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuItem
+                      onClick={() => setIsCreatingNewCategory(true)}
+                      className="text-blue-600 font-medium cursor-pointer"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create new category
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                {isCreatingNewCategory && (
+                  <div className="mt-2 space-y-2">
+                    <Input
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={handleNewCategoryKeyPress}
+                      placeholder="Enter new category name"
+                      className="w-full"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleCreateNewCategory}
+                        disabled={!newCategoryName.trim()}
+                      >
+                        Create
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setIsCreatingNewCategory(false);
+                          setNewCategoryName("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
