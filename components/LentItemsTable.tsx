@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import React, { useState, useMemo } from "react";
+import { cancelRentalAction } from "@/app/actions";
+import { useRouter } from "next/navigation";
 
 interface LentItemsTableProps {
   lentItems: any[];
@@ -13,6 +15,50 @@ export default function LentItemsTable({
   gearMap,
 }: LentItemsTableProps) {
   const [showReturned, setShowReturned] = useState(false);
+  const [cancelingRentals, setCancelingRentals] = useState<Set<string>>(new Set());
+  const router = useRouter();
+
+  const handleCancelRental = async (rentalId: string, gearName: string) => {
+    if (cancelingRentals.has(rentalId)) return;
+    
+    // Confirm cancellation
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel your reservation for "${gearName}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    setCancelingRentals(prev => {
+      const newSet = new Set(prev);
+      newSet.add(rentalId);
+      return newSet;
+    });
+    
+    try {
+      console.log(`[handleCancelRental] Calling cancelRentalAction for rental ${rentalId}`);
+      const result = await cancelRentalAction(rentalId);
+      
+      console.log(`[handleCancelRental] Result:`, result);
+      
+      if (result.error) {
+        alert(`Error: ${result.error}`);
+      } else if (result.success) {
+        alert("Rental canceled successfully!");
+        // Data should be refreshed automatically due to revalidatePath
+      } else {
+        alert("Unexpected response from server. Please try again.");
+      }
+    } catch (error) {
+      console.error(`[handleCancelRental] Exception:`, error);
+      alert("Failed to cancel rental. Please try again.");
+    } finally {
+      setCancelingRentals(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rentalId);
+        return newSet;
+      });
+    }
+  };
 
   // Filter items based on whether they're returned and the showReturned state
   const filteredItems = useMemo(() => {
@@ -50,6 +96,7 @@ export default function LentItemsTable({
               <th className="px-4 py-2 text-left">Due Date</th>
               <th className="px-4 py-2 text-left">Status</th>
               <th className="px-4 py-2 text-left">Returned</th>
+              <th className="px-4 py-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -58,11 +105,13 @@ export default function LentItemsTable({
               const due = item.due_date ? new Date(item.due_date) : null;
               const now = new Date();
               let status = "";
+              let canCancel = false;
               
               if (item.returned) {
                 status = "Returned";
               } else if (lent && lent > now) {
                 status = "Reserved";
+                canCancel = true; // Can cancel future reservations
               } else if (due && due < now) {
                 status = "Past Due";
               } else {
@@ -102,6 +151,19 @@ export default function LentItemsTable({
                     }`}>
                       {item.returned ? "Yes" : "No"}
                     </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {canCancel && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelRental(item.id, gearMap[item.gear_id] || "Unknown Item")}
+                        disabled={cancelingRentals.has(item.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        {cancelingRentals.has(item.id) ? "Canceling..." : "Cancel"}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               );

@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { supabaseService } from "@/utils/supabase/service";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export const signUpAction = async (formData: FormData) => {
   const name = formData.get("name")?.toString();
@@ -179,4 +180,100 @@ export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
   return redirect("/sign-in");
+};
+
+export const cancelRentalAction = async (rentalId: string) => {
+  const supabase = await createClient();
+  
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be signed in to cancel a rental." };
+  }
+
+  console.log(`[cancelRentalAction] Attempting to cancel rental ${rentalId} for user ${user.id}`);
+
+  // Check if the rental exists and belongs to the user
+  const { data: rental, error: fetchError } = await supabase
+    .from("Lent")
+    .select("id, user_id, gear_id, lent_date, due_date, returned")
+    .eq("id", rentalId)
+    .eq("user_id", user.id)
+    .single();
+
+  console.log(`[cancelRentalAction] Fetch result:`, { rental, fetchError });
+
+  if (fetchError || !rental) {
+    return { error: "Rental not found or you don't have permission to cancel it." };
+  }
+
+  if (rental.returned) {
+    return { error: "This rental has already been returned and cannot be canceled." };
+  }
+
+  // Check if the rental has started (lent_date is in the past)
+  const lentDate = new Date(rental.lent_date);
+  const now = new Date();
+  
+  console.log(`[cancelRentalAction] Date check: lentDate=${lentDate.toISOString()}, now=${now.toISOString()}`);
+  
+  if (lentDate <= now) {
+    return { error: "You cannot cancel a rental that has already started. Please return the item instead." };
+  }
+
+  // Delete the rental (since it's a future reservation)
+  // Use service client to bypass RLS, but we've already verified the user owns this rental
+  const { error: deleteError } = await supabaseService
+    .from("Lent")
+    .delete()
+    .eq("id", rentalId)
+    .eq("user_id", user.id); // Double-check user ownership
+
+  console.log(`[cancelRentalAction] Delete result:`, { deleteError });
+
+  if (deleteError) {
+    console.error(`[cancelRentalAction] Delete error:`, deleteError);
+    return { error: "Failed to cancel rental. Please try again." };
+  }
+
+  console.log(`[cancelRentalAction] Delete successful, now updating gear statistics...`);
+
+  // Update gear statistics (reverse the rental count and revenue)
+  try {
+    const { data: gear } = await supabaseService
+      .from("Gear")
+      .select("total_times_rented, revenue_generated, price")
+      .eq("id", rental.gear_id)
+      .single();
+
+    console.log(`[cancelRentalAction] Gear data:`, gear);
+
+    if (gear) {
+      const { error: updateError } = await supabaseService
+        .from("Gear")
+        .update({
+          total_times_rented: Math.max(0, (gear.total_times_rented || 0) - 1),
+          revenue_generated: Math.max(0, (gear.revenue_generated || 0) - (gear.price || 0)),
+        })
+        .eq("id", rental.gear_id);
+      
+      if (updateError) {
+        console.warn(`[cancelRentalAction] Gear update failed but rental was canceled:`, updateError);
+      } else {
+        console.log(`[cancelRentalAction] Gear update successful`);
+      }
+    }
+  } catch (gearError) {
+    console.warn(`[cancelRentalAction] Gear update failed but rental was canceled:`, gearError);
+  }
+
+  console.log(`[cancelRentalAction] Successfully canceled rental ${rentalId}`);
+  
+  // Revalidate the member page to refresh the data
+  revalidatePath("/member");
+  
+  return { success: true };
 };
