@@ -20,13 +20,48 @@ export default function ProductReservationClient({
 	const [success, setSuccess] = useState<string | null>(null);
 	const [reservingNow, setReservingNow] = useState(false);
 	const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
+	const [membershipStatus, setMembershipStatus] = useState<'valid' | 'invalid' | 'no_record' | 'loading'>('loading');
 	const router = useRouter();
 	const { addToCart, isItemInCart, removeFromCart } = useShoppingCart();
 
 	// Load unavailable dates on component mount
 	useEffect(() => {
 		loadUnavailableDates();
+		checkMembershipStatus();
 	}, [item.id]);
+
+	const checkMembershipStatus = async () => {
+		if (!user) {
+			setMembershipStatus('no_record');
+			return;
+		}
+
+		try {
+			const supabase = createClient();
+			const { data: memberships, error: membershipError } = await supabase
+				.from("Membership")
+				.select("user_id, valid")
+				.eq("user_id", user.id)
+				.maybeSingle();
+
+			if (membershipError) {
+				console.error('Error checking membership:', membershipError);
+				setMembershipStatus('no_record');
+				return;
+			}
+
+			if (!memberships) {
+				setMembershipStatus('no_record');
+			} else if (memberships.valid) {
+				setMembershipStatus('valid');
+			} else {
+				setMembershipStatus('invalid');
+			}
+		} catch (error) {
+			console.error('Error checking membership:', error);
+			setMembershipStatus('no_record');
+		}
+	};
 
 	const loadUnavailableDates = async () => {
 		try {
@@ -306,6 +341,31 @@ export default function ProductReservationClient({
 
 	return (
 		<div className="mx-auto w-full max-w-sm bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 flex flex-col gap-4 mt-8">
+			{/* Membership Warning */}
+			{(membershipStatus === 'invalid' || membershipStatus === 'no_record') && (
+				<div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-2">
+					<div className="flex items-start gap-2">
+						<div className="bg-yellow-100 p-1 rounded-full mt-0.5">
+							<svg className="w-4 h-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+								<path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+							</svg>
+						</div>
+						<div className="flex-1">
+							<p className="text-xs font-medium text-yellow-800 mb-1">Membership Required</p>
+							<p className="text-xs text-yellow-700 leading-tight">
+								{membershipStatus === 'no_record' 
+									? "You can reserve this item, but you'll need to become a member when picking it up."
+									: "You can reserve this item, but you'll need to renew your membership when picking it up."
+								}
+							</p>
+							<p className="text-xs text-yellow-700 mt-1">
+								<strong>Pickup:</strong> Tue/Thu 5:30-6:30 PM, PAC 2010
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
+
 			<h2 className="text-lg font-semibold text-primary mb-2 text-center">
 				{itemInCart ? "Update Reservation" : "Reserve this item"}
 			</h2>

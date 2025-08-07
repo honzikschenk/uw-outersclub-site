@@ -17,7 +17,7 @@ export async function reserveCartItems({
     return { error: "No items to reserve." };
   }
 
-  // 1. Check if user has an active membership
+  // 1. Check if user has an active membership (but allow rental to proceed)
   const { data: memberships, error: membershipError } = await supabase
     .from("Membership")
     .select("user_id, valid")
@@ -30,9 +30,8 @@ export async function reserveCartItems({
   if (!memberships) {
     return { error: "No membership record found. Please contact an admin to set up your membership." };
   }
-  if (!memberships.valid) {
-    return { error: "Your membership has expired or is not valid. Please contact an admin." };
-  }
+  // Note: We allow rentals to proceed even if membership is not valid
+  // The user will be warned at pickup time about membership requirements
 
   // 2. Check for duplicate items in the current cart
   const gearIdsInCart = cartItems.map(item => item.id);

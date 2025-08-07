@@ -67,6 +67,7 @@ export default async function Page({
           <span className="text-sm sm:text-base text-gray-700">Tuesday–Thursday: ${item.price_tu_th ?? 'N/A'}</span>
           <span className="text-sm sm:text-base text-gray-700">Thursday–Tuesday: ${item.price_th_tu ?? 'N/A'}</span>
           <span className="text-sm sm:text-base text-gray-700">Full Week: ${item.price_week ?? 'N/A'}</span>
+          <span className="text-sm sm:text-base text-gray-700">Extended Periods: Stacked weekly rates + extra days</span>
           <span className="text-sm sm:text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
         </div>
         <ProductReservationClient user={user} item={item} />
