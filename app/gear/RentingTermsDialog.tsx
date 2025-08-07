@@ -13,14 +13,26 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function RentingTermsDialog() {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    setOpen(true);
+    // Check if user has already seen the terms
+    const hasSeenTerms = localStorage.getItem('hasSeenRentingTerms');
+    if (!hasSeenTerms) {
+      setOpen(true);
+    }
   }, []);
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog 
+      open={open} 
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          localStorage.setItem('hasSeenRentingTerms', 'true');
+        }
+      }}
+    >
       <AlertDialogTrigger asChild>
         <Button variant="link" className="px-2">
           Renting Terms & Conditions
@@ -102,7 +114,12 @@ export default function RentingTermsDialog() {
           </ul>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={() => setOpen(false)}>
+          <AlertDialogAction 
+            onClick={() => {
+              setOpen(false);
+              localStorage.setItem('hasSeenRentingTerms', 'true');
+            }}
+          >
             I accept
           </AlertDialogAction>
         </AlertDialogFooter>
