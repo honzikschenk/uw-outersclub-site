@@ -14,8 +14,9 @@ export interface CartItem {
     from: Date;
     to: Date;
   };
-  rentalType: 'tu_th' | 'th_tu' | 'week';
+  rentalType: 'tu_th' | 'th_tu' | 'week' | 'extended' | 'custom';
   price: number;
+  breakdown?: string; // Price breakdown explanation for extended rentals
 }
 
 interface ShoppingCartContextType {

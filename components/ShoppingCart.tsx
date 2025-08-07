@@ -21,7 +21,9 @@ import Link from 'next/link';
 const RENTAL_TYPE_LABELS = {
   'tu_th': 'Tuesday to Thursday',
   'th_tu': 'Thursday to Tuesday',
-  'week': 'Full Week'
+  'week': 'Full Week',
+  'extended': 'Extended Rental',
+  'custom': 'Custom Period'
 };
 
 export function ShoppingCartIcon() {
@@ -167,6 +169,11 @@ function CartContent({ onEditClick }: { onEditClick?: () => void }) {
                     <p className="text-xs text-muted-foreground leading-tight" aria-label={`Rental dates from ${item.selectedDates.from.toLocaleDateString()} to ${item.selectedDates.to.toLocaleDateString()}`}>
                       {item.selectedDates.from.toLocaleDateString()} - {item.selectedDates.to.toLocaleDateString()}
                     </p>
+                    {item.breakdown && (
+                      <p className="text-xs text-muted-foreground leading-tight">
+                        {item.breakdown}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end justify-between min-w-0 flex-shrink-0">

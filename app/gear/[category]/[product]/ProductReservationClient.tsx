@@ -81,27 +81,119 @@ export default function ProductReservationClient({
 		}
 	};
 
-	// Helper to check if a range is valid and get price key
-	function getRentalTypeAndPrice(range: { from: Date | null; to: Date | null }) {
-		if (!range.from || !range.to) return { type: null, priceKey: null };
+	// Helper to calculate rental price for any period
+	function calculateRentalPrice(range: { from: Date | null; to: Date | null }) {
+		if (!range.from || !range.to) return { type: null, price: 0, breakdown: null };
+		
 		const from = range.from;
 		const to = range.to;
 		const dayFrom = from.getDay();
 		const dayTo = to.getDay();
 		const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
-		// Tuesday to Thursday
-		if (dayFrom === 2 && dayTo === 4 && diff === 2) return { type: 'tu_th' as const, priceKey: 'price_tu_th' };
-		// Thursday to Tuesday
-		if (dayFrom === 4 && dayTo === 2 && diff === 5) return { type: 'th_tu' as const, priceKey: 'price_th_tu' };
-		// Tuesday to next Tuesday
-		if (dayFrom === 2 && dayTo === 2 && diff === 7) return { type: 'week' as const, priceKey: 'price_week' };
-		// Thursday to next Thursday
-		if (dayFrom === 4 && dayTo === 4 && diff === 7) return { type: 'week' as const, priceKey: 'price_week' };
-		return { type: null, priceKey: null };
+		
+		// Handle traditional rental types first
+		// Tuesday to Thursday (2 days)
+		if (dayFrom === 2 && dayTo === 4 && diff === 2) {
+			return { 
+				type: 'tu_th' as const, 
+				price: item.price_tu_th ?? 0,
+				breakdown: `Tuesday–Thursday (${diff} days)`
+			};
+		}
+		// Thursday to Tuesday (5 days)
+		if (dayFrom === 4 && dayTo === 2 && diff === 5) {
+			return { 
+				type: 'th_tu' as const, 
+				price: item.price_th_tu ?? 0,
+				breakdown: `Thursday–Tuesday (${diff} days)`
+			};
+		}
+		// Exact week (7 days)
+		if ((dayFrom === 2 && dayTo === 2 && diff === 7) || (dayFrom === 4 && dayTo === 4 && diff === 7)) {
+			return { 
+				type: 'week' as const, 
+				price: item.price_week ?? 0,
+				breakdown: `Full week (${diff} days)`
+			};
+		}
+		
+		// Handle longer periods with stacked pricing
+		if (diff > 7) {
+			const weeklyPrice = item.price_week ?? 0;
+			const tuThPrice = item.price_tu_th ?? 0;
+			const thTuPrice = item.price_th_tu ?? 0;
+			
+			if (weeklyPrice === 0) return { type: null, price: 0, breakdown: null };
+			
+			const fullWeeks = Math.floor(diff / 7);
+			const remainingDays = diff % 7;
+			
+			let totalPrice = fullWeeks * weeklyPrice;
+			let breakdown = `${fullWeeks} week${fullWeeks > 1 ? 's' : ''} × $${weeklyPrice}`;
+			
+			// Handle remaining days
+			if (remainingDays > 0) {
+				let extraPrice = 0;
+				let extraDescription = '';
+				
+				// Choose the best pricing for remaining days
+				if (remainingDays <= 2 && tuThPrice > 0) {
+					extraPrice = tuThPrice;
+					extraDescription = `+ ${remainingDays} extra day${remainingDays > 1 ? 's' : ''} (Tu-Th rate) × $${tuThPrice}`;
+				} else if (remainingDays <= 5 && thTuPrice > 0) {
+					extraPrice = thTuPrice;
+					extraDescription = `+ ${remainingDays} extra day${remainingDays > 1 ? 's' : ''} (Th-Tu rate) × $${thTuPrice}`;
+				} else {
+					// For 6+ remaining days, charge another full week
+					extraPrice = weeklyPrice;
+					extraDescription = `+ ${remainingDays} extra day${remainingDays > 1 ? 's' : ''} (week rate) × $${weeklyPrice}`;
+				}
+				
+				totalPrice += extraPrice;
+				breakdown += ` ${extraDescription}`;
+			}
+			
+			return {
+				type: 'extended' as const,
+				price: totalPrice,
+				breakdown: `${breakdown} = $${totalPrice} (${diff} days total)`
+			};
+		}
+		
+		// For periods less than 7 days that don't match standard patterns
+		if (diff > 0 && diff < 7) {
+			const tuThPrice = item.price_tu_th ?? 0;
+			const thTuPrice = item.price_th_tu ?? 0;
+			const weekPrice = item.price_week ?? 0;
+			
+			// Choose the most appropriate rate
+			let price = 0;
+			let rateType = '';
+			
+			if (diff <= 2 && tuThPrice > 0) {
+				price = tuThPrice;
+				rateType = 'Tu-Th rate';
+			} else if (diff <= 5 && thTuPrice > 0) {
+				price = thTuPrice;
+				rateType = 'Th-Tu rate';
+			} else if (weekPrice > 0) {
+				price = weekPrice;
+				rateType = 'week rate';
+			}
+			
+			if (price > 0) {
+				return {
+					type: 'custom' as const,
+					price,
+					breakdown: `${diff} day${diff > 1 ? 's' : ''} (${rateType}) = $${price}`
+				};
+			}
+		}
+		
+		return { type: null, price: 0, breakdown: null };
 	}
 
-	const { type: rentalType, priceKey } = getRentalTypeAndPrice(selectedRange);
-	const price = priceKey ? item[priceKey] ?? 0 : 0;
+	const { type: rentalType, price, breakdown } = calculateRentalPrice(selectedRange);
 	const itemInCart = isItemInCart(item.id);
 
 	const handleAddToCart = () => {
@@ -124,6 +216,7 @@ export default function ProductReservationClient({
 			},
 			rentalType,
 			price,
+			breakdown,
 		};
 
 		addToCart(cartItem);
@@ -168,6 +261,7 @@ export default function ProductReservationClient({
 				},
 				rentalType,
 				price,
+				breakdown,
 			};
 
 			// Use the same checkout API as the cart
@@ -239,11 +333,11 @@ export default function ProductReservationClient({
 								let autoTo: Date | null = null;
 								
 								if (dayOfWeek === 2) { // Tuesday
-									// Auto-select Thursday (2 days later)
+									// Auto-select Thursday (2 days later) as default
 									autoTo = new Date(range.from);
 									autoTo.setDate(autoTo.getDate() + 2);
 								} else if (dayOfWeek === 4) { // Thursday
-									// Auto-select next Tuesday (5 days later)
+									// Auto-select next Tuesday (5 days later) as default
 									autoTo = new Date(range.from);
 									autoTo.setDate(autoTo.getDate() + 5);
 								}
@@ -262,11 +356,11 @@ export default function ProductReservationClient({
 						const dayOfWeek = date.getDay();
 						if (dayOfWeek !== 2 && dayOfWeek !== 4) return true;
 						
-						// If we have a start date, only allow dates within a week from the start date
+						// If we have a start date, allow dates up to 4 weeks from the start date
 						if (selectedRange.from) {
-							const oneWeekFromStart = new Date(selectedRange.from);
-							oneWeekFromStart.setDate(oneWeekFromStart.getDate() + 7);
-							if (date > oneWeekFromStart) return true;
+							const fourWeeksFromStart = new Date(selectedRange.from);
+							fourWeeksFromStart.setDate(fourWeeksFromStart.getDate() + 28);
+							if (date > fourWeeksFromStart) return true;
 						}
 						
 						// Disable unavailable dates
@@ -284,8 +378,15 @@ export default function ProductReservationClient({
 						{rentalType === 'tu_th' && 'Tuesday to Thursday'}
 						{rentalType === 'th_tu' && 'Thursday to Tuesday'}
 						{rentalType === 'week' && 'Full Week'}
+						{rentalType === 'extended' && 'Extended Rental'}
+						{rentalType === 'custom' && 'Custom Period'}
 					</div>
 					<div className="text-lg font-bold">${price}</div>
+					{breakdown && (
+						<div className="text-xs mt-1 text-blue-700 leading-tight">
+							{breakdown}
+						</div>
+					)}
 				</div>
 			)}
 

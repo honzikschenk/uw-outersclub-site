@@ -15,7 +15,9 @@ import { useRouter } from 'next/navigation';
 const RENTAL_TYPE_LABELS = {
   'tu_th': 'Tuesday to Thursday',
   'th_tu': 'Thursday to Tuesday',
-  'week': 'Full Week'
+  'week': 'Full Week',
+  'extended': 'Extended Rental',
+  'custom': 'Custom Period'
 };
 
 export default function CheckoutPage() {
@@ -173,6 +175,11 @@ export default function CheckoutPage() {
                         {item.selectedDates.from.toLocaleDateString()} - {item.selectedDates.to.toLocaleDateString()}
                       </span>
                     </div>
+                    {item.breakdown && (
+                      <p className="text-xs text-muted-foreground leading-tight">
+                        {item.breakdown}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 items-end justify-between min-w-0 flex-shrink-0">
