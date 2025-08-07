@@ -416,13 +416,6 @@ export default function ProductReservationClient({
 						const dayOfWeek = date.getDay();
 						if (dayOfWeek !== 2 && dayOfWeek !== 4) return true;
 						
-						// If we have a start date, allow dates up to 4 weeks from the start date
-						if (selectedRange.from) {
-							const fourWeeksFromStart = new Date(selectedRange.from);
-							fourWeeksFromStart.setDate(fourWeeksFromStart.getDate() + 28);
-							if (date > fourWeeksFromStart) return true;
-						}
-						
 						// Disable unavailable dates
 						return unavailableDates.some(unavailableDate => 
 							date.toDateString() === unavailableDate.toDateString()
