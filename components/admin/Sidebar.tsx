@@ -21,6 +21,7 @@ const navigation = [
   { name: "Gear", href: "/admin/gear", icon: Package },
   { name: "Rentals", href: "/admin/rentals", icon: FileText },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { name: "Blog", href: "/admin/blog", icon: FileText },
 ];
 
 export function Sidebar() {

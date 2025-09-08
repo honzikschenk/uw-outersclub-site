@@ -86,6 +86,9 @@ export default function RootLayout({
                     <a href="/resources" className="hover:text-primary">
                       Resources
                     </a>
+                    <a href="/blog" className="hover:text-primary">
+                      Blog
+                    </a>
                     <a href="/contact" className="hover:text-primary">
                       Contact
                     </a>
@@ -133,6 +136,9 @@ export default function RootLayout({
                         <a href="/resources" className="hover:text-primary">
                           Resources
                         </a>
+                        <a href="/blog" className="hover:text-primary">
+                          Blog
+                        </a>
                         <a href="/contact" className="hover:text-primary">
                           Contact
                         </a>
@@ -147,7 +153,7 @@ export default function RootLayout({
               </header>
               <div className="flex flex-col w-full min-h-screen pb-20 lg:pb-0">{children}</div>
               <MobileCartButton />
-              <footer className="w-full flex flex-col items-center justify-center border-t border-border bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 mx-auto text-center text-xs gap-2 py-8 mt-10 shadow-inner">
+              <footer className="w-full flex flex-col items-center justify-center border-t border-border bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 mx-auto text-center text-xs gap-2 py-8 shadow-inner">
                 <div className="flex items-center gap-2">
                   <img
                     src="/logo.jpg"
