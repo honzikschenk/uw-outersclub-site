@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
+import sanitizeHtml from "sanitize-html";
 
 type BlogPost = {
   id: string;
@@ -24,6 +25,34 @@ export default async function BlogPostPage({ params }: any) {
 
   if (!post) return notFound();
 
+  const normalizeHref = (href: string) => {
+    const s = (href || "").trim();
+    if (!s) return s;
+    if (s.startsWith("#")) return s; // allow in-page anchors
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return s; // already has a scheme
+    if (/^\/\//.test(s)) return "https:" + s; // protocol-relative
+    if (/^\//.test(s)) return s; // internal absolute path
+    return "https://" + s;
+  };
+
+  const html = sanitizeHtml(post.content_html || "", {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "span", "code", "pre", "hr"]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      img: ["src", "alt", "title"],
+      a: ["href", "name", "target", "rel"],
+      span: ["class", "style"],
+      code: ["class"],
+    },
+    allowedSchemesByTag: { img: ["data", "http", "https"] },
+    transformTags: {
+      a: (tagName, attribs) => {
+        if (attribs.href) attribs.href = normalizeHref(attribs.href);
+        return { tagName, attribs };
+      },
+    },
+  });
+
   return (
     <article className="container mx-auto px-4 max-w-3xl py-10">
       <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
@@ -35,7 +64,7 @@ export default async function BlogPostPage({ params }: any) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.cover_image_url} alt="" className="w-full rounded-lg mb-6" />
       )}
-      <div className="prose prose-neutral max-w-none" dangerouslySetInnerHTML={{ __html: post.content_html }} />
+      <div className="prose prose-neutral max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
     </article>
   );
 }

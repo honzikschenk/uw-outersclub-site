@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import sanitizeHtml from "sanitize-html";
-import { marked } from "marked";
-import TurndownService from "turndown";
 
 type PostRow = {
   id: string;
@@ -32,27 +30,53 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     cover_image_url: "",
     published: false,
   });
-  const [contentMd, setContentMd] = useState("");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [errors, setErrors] = useState({ title: false, excerpt: false, content: false });
   const titleRef = useRef<HTMLInputElement>(null);
   const excerptRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
-  const didPositionCaretRef = useRef(false);
-  const autosize = (el: HTMLTextAreaElement) => {
-    el.style.height = "auto";
-    el.style.height = Math.min(1200, Math.max(256, el.scrollHeight)) + "px";
+  const editorRef = useRef<HTMLDivElement>(null);
+  const lastRangeRef = useRef<Range | null>(null);
+  const didFocusEditorRef = useRef(false);
+  const didSetInitialHtmlRef = useRef(false);
+  const normalizeHref = (href: string) => {
+    const s = (href || "").trim();
+    if (!s) return s;
+    if (s.startsWith("#")) return s; // in-page anchor
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return s; // has scheme (http, https, mailto, tel, etc.)
+    if (/^\/\//.test(s)) return "https:" + s; // protocol-relative
+    if (/^\//.test(s)) return s; // site-absolute path (internal link)
+    return "https://" + s; // bare domain or relative-ish -> make absolute
   };
-  const focusContentEndOnce = () => {
-    const el = contentRef.current;
+  const sanitizeCfg = {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "span", "code", "pre", "hr"]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      img: ["src", "alt", "title"],
+      a: ["href", "name", "target", "rel"],
+      span: ["class", "style"],
+      code: ["class"],
+    },
+    allowedSchemesByTag: { img: ["data", "http", "https"] },
+    transformTags: {
+      a: (tagName: string, attribs: Record<string, string>) => {
+        const href = attribs.href;
+        if (href) {
+          attribs.href = normalizeHref(href);
+        }
+        return { tagName, attribs };
+      },
+    },
+  } as const;
+  const placeCaretAtEnd = () => {
+    const el = editorRef.current;
     if (!el) return;
-    try {
-      const len = el.value?.length ?? 0;
-      el.focus();
-      el.selectionStart = len;
-      el.selectionEnd = len;
-    } catch {}
-    didPositionCaretRef.current = true;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
   };
 
   const slugify = (s: string) =>
@@ -68,11 +92,11 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
   const openNew = () => {
     setEditing(null);
   setForm({ title: "", slug: "", excerpt: "", content_html: "", cover_image_url: "", published: false });
-  setContentMd("");
   setSlugTouched(false);
   setErrors({ title: false, excerpt: false, content: false });
   setMode("edit");
-  didPositionCaretRef.current = false;
+  didFocusEditorRef.current = false;
+  didSetInitialHtmlRef.current = false;
     setIsOpen(true);
   };
 
@@ -89,48 +113,73 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
       cover_image_url: p.cover_image_url || "",
       published: !!p.published,
     });
-    try {
-      const td = new TurndownService({ headingStyle: "atx" });
-      const md = p.content_html ? td.turndown(p.content_html) : "";
-      setContentMd(md);
-    } catch {
-      setContentMd("");
-    }
     setSlugTouched(true);
     setErrors({ title: false, excerpt: false, content: false });
     setMode("edit");
-    didPositionCaretRef.current = false;
+  didFocusEditorRef.current = false;
+  didSetInitialHtmlRef.current = false;
     setIsOpen(true);
   };
 
-  // Auto-resize textarea and place caret at end when opening editor with prefilled content
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    autosize(el);
-    // caret positioning only once per open
-    if (!didPositionCaretRef.current && isOpen && mode === "edit") {
-      focusContentEndOnce();
-    }
-  }, [contentMd, isOpen, mode]);
-
-  // When dialog opens for edit/new, focus editor and place caret at end
+  // Focus editor and place caret at end when opening
   useEffect(() => {
     if (!isOpen || mode !== "edit") return;
-    didPositionCaretRef.current = false;
-    // Wait for dialog to mount
-    const id = requestAnimationFrame(() => focusContentEndOnce());
+    const id = requestAnimationFrame(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      // Set initial HTML only once per open/edit session
+      if (!didSetInitialHtmlRef.current) {
+        el.innerHTML = form.content_html || "<p><br/></p>";
+        didSetInitialHtmlRef.current = true;
+      }
+      if (!didFocusEditorRef.current) {
+        placeCaretAtEnd();
+        didFocusEditorRef.current = true;
+      }
+    });
     return () => cancelAnimationFrame(id);
   }, [isOpen, mode, editing?.id]);
+
+  // When switching back to edit mode, re-sync the editor contents once
+  useEffect(() => {
+    if (mode === "edit") {
+      didSetInitialHtmlRef.current = false;
+      didFocusEditorRef.current = false;
+    }
+  }, [mode]);
+
+  // Track selection inside editor for toolbar actions
+  useEffect(() => {
+    const handler = () => {
+      const el = editorRef.current;
+      const sel = window.getSelection();
+      if (!el || !sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer)) {
+        lastRangeRef.current = range;
+      }
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, []);
+
+  const restoreSelection = () => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    if (lastRangeRef.current) sel?.addRange(lastRangeRef.current);
+  };
 
   const save = async () => {
     const title = (form.title || "").trim();
     const excerpt = (form.excerpt || "").trim();
-    const content = (contentMd || "").trim();
+    const content = (form.content_html || "").trim();
     const nextErrors = { title: !title, excerpt: !excerpt, content: !content };
     if (nextErrors.title || nextErrors.excerpt || nextErrors.content) {
       setErrors(nextErrors);
-      const firstRef = nextErrors.title ? titleRef : nextErrors.excerpt ? excerptRef : contentRef;
+      const firstRef = nextErrors.title ? titleRef : nextErrors.excerpt ? excerptRef : editorRef;
       // Focus first invalid field for quick correction
       firstRef.current?.focus();
       return;
@@ -139,19 +188,8 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     const body: any = { ...form };
     body.title = title;
     body.excerpt = excerpt;
-    // Convert Markdown to sanitized HTML for storage
-    const rawHtml = (marked.parse(contentMd, { breaks: true }) as string) || "";
-    body.content_html = sanitizeHtml(rawHtml, {
-      allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "span", "code", "pre", "hr"]),
-      allowedAttributes: {
-        ...sanitizeHtml.defaults.allowedAttributes,
-        img: ["src", "alt", "title"],
-        a: ["href", "name", "target", "rel"],
-        span: ["class", "style"],
-        code: ["class"],
-      },
-      allowedSchemesByTag: { img: ["data", "http", "https"] },
-    });
+    // Sanitize HTML for storage
+    body.content_html = sanitizeHtml(form.content_html || "", sanitizeCfg as any);
     body.slug = (form.slug && form.slug.trim()) ? form.slug.trim() : defaultSlug;
     if (editing) body.id = editing.id;
     const res = await fetch("/api/admin/blog", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -318,122 +356,52 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
               </div>
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm" htmlFor="content_html">Content (Markdown) <span className="text-red-600">*</span></label>
-                <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("bold"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><b>B</b></Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("italic"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><i>I</i></Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("underline"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><u>U</u></Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("insertUnorderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>• List</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("insertOrderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>1. List</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h1"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H1</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h2"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H2</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h3"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H3</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "p"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>Paragraph</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => {
+                  restoreSelection();
+                  const input = prompt("Link URL:");
+                  const url = input ? normalizeHref(input) : "";
+                  if (url) {
+                    document.execCommand("createLink", false, url);
+                    // best-effort: add rel/target if desired in the future
+                  }
+                  const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML}));
+                }}>Link</Button>
+                <div className="ml-auto flex gap-2 text-xs">
                   <Button type="button" size="sm" variant={mode === "edit" ? "default" : "outline"} onClick={() => setMode("edit")}>Edit</Button>
                   <Button type="button" size="sm" variant={mode === "preview" ? "default" : "outline"} onClick={() => setMode("preview")}>Preview</Button>
                 </div>
               </div>
-        {mode === "edit" ? (
-                <textarea
+              {mode === "edit" ? (
+        <div
                   key={editing ? editing.id : "new"}
-                  id="content_html"
-                  ref={contentRef}
-                  required
-                  aria-required
-                  spellCheck={false}
-          className={`min-h-40 sm:min-h-64 border rounded-md p-3 font-mono text-sm leading-6 whitespace-pre-wrap ${errors.content ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                  value={contentMd}
-                  placeholder="Write your post in Markdown... (e.g., # Heading, * list item)"
-                  onChange={(e) => {
+                  ref={editorRef}
+                  className={`min-h-40 sm:min-h-64 border rounded-md p-3 bg-white focus:outline-none prose prose-sm max-w-none ${errors.content ? "ring-1 ring-red-500" : ""}`}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => {
                     if (errors.content) setErrors((prev) => ({ ...prev, content: false }));
-                    const target = e.currentTarget;
-                    const selStart = target.selectionStart ?? 0;
-                    const selEnd = target.selectionEnd ?? 0;
-                    const nextVal = target.value;
-                    setContentMd(nextVal);
-                    requestAnimationFrame(() => {
-                      const el = contentRef.current;
-                      if (!el) return;
-                      autosize(el);
-                      // Restore selection if focused
-                      if (document.activeElement === el) {
-                        try {
-                          el.selectionStart = selStart;
-                          el.selectionEnd = selEnd;
-                        } catch {}
-                      }
-                    });
+          const html = (e.currentTarget as HTMLDivElement).innerHTML;
+          setForm((prev) => ({ ...prev, content_html: html }));
                   }}
-                  onKeyDown={(e) => {
-                    const el = contentRef.current;
-                    if (!el) return;
-                    const start = el.selectionStart ?? 0;
-                    const end = el.selectionEnd ?? 0;
-                    const value = contentMd;
-                    // Tab / Shift+Tab for indenting
-                    if (e.key === "Tab") {
-                      e.preventDefault();
-                      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-                      const before = value.slice(0, lineStart);
-                      const line = value.slice(lineStart, end);
-                      if (e.shiftKey) {
-                        const dedented = line.replace(/^ {1,2}/gm, "");
-                        const next = before + dedented + value.slice(end);
-                        setContentMd(next);
-                        requestAnimationFrame(() => {
-                          const delta = line.length - dedented.length;
-                          const posStart = start - Math.min(2, start - lineStart);
-                          const posEnd = end - delta;
-                          if (contentRef.current) {
-                            contentRef.current.selectionStart = Math.max(lineStart, posStart);
-                            contentRef.current.selectionEnd = Math.max(lineStart, posEnd);
-                          }
-                        });
-                      } else {
-                        const indented = line.replace(/^/gm, "  ");
-                        const next = before + indented + value.slice(end);
-                        setContentMd(next);
-                        requestAnimationFrame(() => {
-                          const delta = indented.length - line.length;
-                          if (contentRef.current) {
-                            const pos = start + Math.min(2, delta);
-                            contentRef.current.selectionStart = pos;
-                            contentRef.current.selectionEnd = pos;
-                          }
-                        });
-                      }
-                      return;
-                    }
-                    // Continue lists on Enter
-                    if (e.key === "Enter") {
-                      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-                      const currentLine = value.slice(lineStart, start);
-                      const m = currentLine.match(/^(\s*)([-*+]|\d+\.)\s+(.*)?$/);
-                      if (m) {
-                        e.preventDefault();
-                        const indent = m[1] ?? "";
-                        const marker = m[2] ?? "";
-                        const after = (m[3] ?? "").trim();
-                        const insert = after.length === 0 ? "\n" : `\n${indent}${marker} `;
-                        const next = value.slice(0, start) + insert + value.slice(end);
-                        setContentMd(next);
-                        requestAnimationFrame(() => {
-                          if (contentRef.current) {
-                            const pos = start + insert.length;
-                            contentRef.current.selectionStart = pos;
-                            contentRef.current.selectionEnd = pos;
-                          }
-                        });
-                      }
-                    }
-                    // Bold/Italic shortcuts
-                    if ((e.metaKey || e.ctrlKey) && (e.key === "b" || e.key === "i")) {
-                      e.preventDefault();
-                      const wrap = e.key === "b" ? "**" : "*";
-                      const selected = value.slice(start, end) || "text";
-                      const next = value.slice(0, start) + wrap + selected + wrap + value.slice(end);
-                      setContentMd(next);
-                      requestAnimationFrame(() => {
-                        if (contentRef.current) {
-                          const posStart = start + wrap.length;
-                          const posEnd = posStart + selected.length;
-                          contentRef.current.selectionStart = posStart;
-                          contentRef.current.selectionEnd = posEnd;
-                        }
-                      });
-                    }
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const html = e.clipboardData.getData("text/html") || e.clipboardData.getData("text/plain");
+                    const sanitized = sanitizeHtml(html, sanitizeCfg as any);
+                    restoreSelection();
+                    document.execCommand("insertHTML", false, sanitized);
+                    // Update state
+                    const el = editorRef.current;
+                    if (el) setForm((prev) => ({ ...prev, content_html: el.innerHTML }));
                   }}
                 />
               ) : (
@@ -442,14 +410,10 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={form.cover_image_url} alt="cover" className="w-full rounded mb-4" />
                   )}
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeHtml((marked.parse(contentMd || "") as string) || "<p class=\"text-gray-500\">Nothing to preview</p>")
-                    }}
-                  />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content_html || "<p class=\"text-gray-500\">Nothing to preview</p>", sanitizeCfg as any) }} />
                 </div>
               )}
-              <p className="text-xs text-gray-500">Tip: Use Markdown. Enter continues list items; Tab/Shift+Tab indent; Cmd/Ctrl+B/I bold/italic.</p>
+              <p className="text-xs text-gray-500">Tip: Use the toolbar or keyboard shortcuts (Cmd/Ctrl+B/I/U).</p>
             </div>
             <div className="grid gap-2">
               <label className="text-sm">Status</label>
