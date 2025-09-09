@@ -11,7 +11,8 @@ import {
   Settings,
   Home,
   Menu,
-  X
+  X,
+  FileType2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +21,8 @@ const navigation = [
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Gear", href: "/admin/gear", icon: Package },
   { name: "Rentals", href: "/admin/rentals", icon: FileText },
+  { name: "Blog", href: "/admin/blog", icon: FileType2 },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { name: "Blog", href: "/admin/blog", icon: FileText },
 ];
 
 export function Sidebar() {
