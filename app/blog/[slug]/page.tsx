@@ -12,11 +12,13 @@ type BlogPost = {
 };
 
 export default async function BlogPostPage({ params }: any) {
+  const { slug } = await params;
+
   const supabase = await createClient();
   const { data: post } = await supabase
     .from("BlogPost")
     .select("id, slug, title, content_html, cover_image_url, published_at, author_name")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .eq("published", true)
     .maybeSingle();
 
