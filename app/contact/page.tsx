@@ -1,5 +1,9 @@
 import Image from 'next/image'
 
+export const metadata = {
+  title: "Contact | UW Outers Club",
+};
+
 export default function Contact() {
   return (
     <div className="container mx-auto py-10 max-w-3xl">

@@ -12,7 +12,8 @@ import {
   Home,
   Menu,
   X,
-  FileType2
+  FileType2,
+  Images
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Gear", href: "/admin/gear", icon: Package },
   { name: "Rentals", href: "/admin/rentals", icon: FileText },
   { name: "Blog", href: "/admin/blog", icon: FileType2 },
+  { name: "Gallery", href: "/admin/gallery", icon: Images },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
 ];
 

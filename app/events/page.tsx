@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+export const metadata = {
+  title: "Events | UW Outers Club",
+};
+
 export default async function Events() {
   return (
     <div className="container mx-auto py-10">

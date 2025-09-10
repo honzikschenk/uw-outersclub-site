@@ -10,6 +10,10 @@ type BlogPost = {
   published_at: string | null;
 };
 
+export const metadata = {
+  title: "Blog | UW Outers Club",
+};
+
 export default async function BlogPage() {
   const supabase = await createClient();
   const { data: posts } = await supabase

@@ -20,6 +20,7 @@ const RENTAL_TYPE_LABELS = {
   'custom': 'Custom Period'
 };
 
+
 export default function CheckoutPage() {
   const { 
     cartItems, 

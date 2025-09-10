@@ -83,6 +83,9 @@ export default function RootLayout({
                     <a href="/events" className="hover:text-primary">
                       Events/Trips
                     </a>
+                    <a href="/gallery" className="hover:text-primary">
+                      Gallery
+                    </a>
                     <a href="/resources" className="hover:text-primary">
                       Resources
                     </a>
@@ -132,6 +135,9 @@ export default function RootLayout({
                         </a>
                         <a href="/events" className="hover:text-primary">
                           Events/Trips
+                        </a>
+                        <a href="/gallery" className="hover:text-primary">
+                          Gallery
                         </a>
                         <a href="/resources" className="hover:text-primary">
                           Resources

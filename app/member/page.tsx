@@ -4,6 +4,10 @@ import { Card } from "@/components/ui/card";
 import React from "react";
 import LentItemsTable from "@/components/LentItemsTable";
 
+export const metadata = {
+  title: "Member | UW Outers Club",
+};
+
 export default async function MemberDashboard() {
   const supabase = await createClient();
   const {

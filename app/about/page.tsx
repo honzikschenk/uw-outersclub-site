@@ -8,6 +8,10 @@ import {
     AccordionTrigger,
   } from "@/components/ui/accordion";  
 
+export const metadata = {
+  title: "About | UW Outers Club",
+};
+
 export default async function About() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-12 space-y-12">

@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { TriangleAlert } from "lucide-react";
 import RentingTermsDialog from "./RentingTermsDialog";
 
+export const metadata = {
+  title: "Gear | UW Outers Club",
+};
+
 export default async function Page() {
   const supabase = await createClient();
   // Fetch distinct categories from the Gear table
