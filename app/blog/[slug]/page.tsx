@@ -64,7 +64,7 @@ export default async function BlogPostPage({ params }: any) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.cover_image_url} alt="" className="w-full rounded-lg mb-6" />
       )}
-      <div className="prose prose-neutral max-w-none" dangerouslySetInnerHTML={{ __html: html }} />
+  <div className="prose prose-neutral max-w-none [overflow-wrap:anywhere] hyphens-auto overflow-x-hidden prose-a:text-blue-600 hover:prose-a:text-blue-700 [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />
     </article>
   );
 }

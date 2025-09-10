@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import sanitizeHtml from "sanitize-html";
 
 type PostRow = {
@@ -31,6 +32,9 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     published: false,
   });
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkValue, setLinkValue] = useState("");
+  const linkInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState({ title: false, excerpt: false, content: false });
   const titleRef = useRef<HTMLInputElement>(null);
   const excerptRef = useRef<HTMLInputElement>(null);
@@ -77,6 +81,15 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
+  };
+
+  const getSelectedAnchor = (): HTMLAnchorElement | null => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    let node: Node | null = sel.getRangeAt(0).commonAncestorContainer;
+    if ((node as Node).nodeType === Node.TEXT_NODE) node = (node as Node).parentElement;
+    const el = (node as HTMLElement | null)?.closest?.("a");
+    return (el as HTMLAnchorElement) || null;
   };
 
   const slugify = (s: string) =>
@@ -294,11 +307,11 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
       </CardContent>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-3xl w-[95vw] max-h-[85dvh] overflow-y-auto">
+        <DialogContent className="w-[100vw] max-w-[100vw] sm:max-w-3xl sm:w-auto max-h-[85dvh] overflow-y-auto overflow-x-hidden p-0 sm:p-6">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Post" : "New Post"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
+          <div className="grid gap-4 px-4 sm:px-0 pb-4">
             <div className="grid gap-2">
               <label className="text-sm">Title <span className="text-red-600">*</span></label>
               <Input
@@ -356,38 +369,93 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
               </div>
             </div>
             <div className="grid gap-2">
-              <div className="flex flex-wrap gap-1">
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("bold"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><b>B</b></Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("italic"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><i>I</i></Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("underline"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><u>U</u></Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("insertUnorderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>• List</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("insertOrderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>1. List</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h1"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H1</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h2"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H2</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h3"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H3</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "p"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>Paragraph</Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => {
-                  restoreSelection();
-                  const input = prompt("Link URL:");
-                  const url = input ? normalizeHref(input) : "";
-                  if (url) {
-                    document.execCommand("createLink", false, url);
-                    // best-effort: add rel/target if desired in the future
-                  }
-                  const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML}));
-                }}>Link</Button>
-                <div className="ml-auto flex gap-2 text-xs">
-                  <Button type="button" size="sm" variant={mode === "edit" ? "default" : "outline"} onClick={() => setMode("edit")}>Edit</Button>
-                  <Button type="button" size="sm" variant={mode === "preview" ? "default" : "outline"} onClick={() => setMode("preview")}>Preview</Button>
+              <div className="sticky top-0 z-20 px-4 sm:px-0 py-2 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
+                <div className="flex min-w-0 flex-wrap items-center gap-1 w-full">
+                  <Button title="Bold" aria-label="Bold" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("bold"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><b>B</b></Button>
+                  <Button title="Italic" aria-label="Italic" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("italic"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><i>I</i></Button>
+                  <Button title="Underline" aria-label="Underline" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("underline"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><u>U</u></Button>
+                  <Button title="Bulleted list" aria-label="Bulleted list" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("insertUnorderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>•<span className="hidden sm:inline"> List</span></Button>
+                  <Button title="Numbered list" aria-label="Numbered list" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("insertOrderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>1.<span className="hidden sm:inline"> List</span></Button>
+                  <Button title="Heading 1" aria-label="Heading 1" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h1"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H1</Button>
+                  <Button title="Heading 2" aria-label="Heading 2" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h2"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H2</Button>
+                  <Button title="Heading 3" aria-label="Heading 3" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h3"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H3</Button>
+                  <Button title="Paragraph" aria-label="Paragraph" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "p"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>P<span className="hidden sm:inline">aragraph</span></Button>
+                  <Popover
+                    modal
+                    open={linkOpen}
+                    onOpenChange={(o)=>{
+                      setLinkOpen(o);
+                      if (o) {
+                        const a = getSelectedAnchor();
+                        setLinkValue(a?.getAttribute("href") || "");
+                        setTimeout(() => linkInputRef.current?.focus(), 0);
+                      }
+                    }}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        title="Insert link"
+                        aria-label="Insert link"
+                        type="button"
+                        variant="outline"
+                        className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                        onMouseDown={(e) => {
+                          // Open popover while preserving the current editor selection
+                          e.preventDefault();
+                          const a = getSelectedAnchor();
+                          setLinkValue(a?.getAttribute("href") || "");
+                          setLinkOpen(true);
+                          // release editor focus so the keyboard targets the input
+                          editorRef.current?.blur();
+                        }}
+                        onClick={(e) => {
+                          // Prevent Radix trigger from toggling closed immediately after open
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        Link
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      side="bottom"
+                      className="w-[90vw] sm:w-72 max-w-[90vw] p-3 space-y-2"
+                      onOpenAutoFocus={(e) => {
+                        // focus the input explicitly (especially for iOS Safari)
+                        e.preventDefault();
+                        linkInputRef.current?.focus();
+                      }}
+                    >
+                      <Input ref={linkInputRef} className="w-full" autoFocus placeholder="https://example.com" value={linkValue} onChange={(e)=>setLinkValue(e.target.value)} />
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("unlink"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); setLinkOpen(false); }}>Remove</Button>
+                        <Button type="button" size="sm" onClick={() => { const url = linkValue ? normalizeHref(linkValue) : ""; restoreSelection(); if (url) document.execCommand("createLink", false, url); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); setLinkOpen(false); }}>Apply</Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button title="Undo" aria-label="Undo" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("undo"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>↶<span className="hidden sm:inline"> Undo</span></Button>
+                  <Button title="Redo" aria-label="Redo" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("redo"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>↷<span className="hidden sm:inline"> Redo</span></Button>
+                  <Button title="Hide keyboard" aria-label="Hide keyboard" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm sm:hidden" onClick={() => { editorRef.current?.blur(); }}>⌄<span className="hidden sm:inline"> Hide KB</span></Button>
+                  <div className="ml-0 sm:ml-auto basis-full sm:basis-auto flex justify-end gap-2 text-xs">
+                    <Button type="button" size="sm" variant={mode === "edit" ? "default" : "outline"} onClick={() => setMode("edit")}>Edit</Button>
+                    <Button type="button" size="sm" variant={mode === "preview" ? "default" : "outline"} onClick={() => setMode("preview")}>Preview</Button>
+                  </div>
                 </div>
               </div>
-              {mode === "edit" ? (
+        {mode === "edit" ? (
         <div
                   key={editing ? editing.id : "new"}
                   ref={editorRef}
-                  className={`min-h-40 sm:min-h-64 border rounded-md p-3 bg-white focus:outline-none prose prose-sm max-w-none ${errors.content ? "ring-1 ring-red-500" : ""}`}
+          className={`min-h-56 sm:min-h-64 border rounded-md p-3 bg-white focus:outline-none prose prose-sm max-w-none [overflow-wrap:anywhere] hyphens-auto overflow-x-hidden prose-a:text-blue-600 hover:prose-a:text-blue-700 [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto ${errors.content ? "ring-1 ring-red-500" : ""}`}
                   contentEditable
                   suppressContentEditableWarning
+                  role="textbox"
+                  aria-multiline="true"
+                  aria-label="Post content editor"
+                  spellCheck
+                  autoCapitalize="sentences"
+                  autoCorrect="on"
                   onInput={(e) => {
                     if (errors.content) setErrors((prev) => ({ ...prev, content: false }));
           const html = (e.currentTarget as HTMLDivElement).innerHTML;
@@ -405,7 +473,7 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                   }}
                 />
               ) : (
-                <div className="prose prose-sm max-w-none p-3 border rounded-md bg-white overflow-auto">
+                <div className="prose prose-sm max-w-none [overflow-wrap:anywhere] hyphens-auto p-3 border rounded-md bg-white overflow-y-auto overflow-x-hidden prose-a:text-blue-600 hover:prose-a:text-blue-700 [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto">
                   {form.cover_image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={form.cover_image_url} alt="cover" className="w-full rounded mb-4" />
