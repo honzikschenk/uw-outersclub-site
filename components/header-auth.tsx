@@ -21,7 +21,7 @@ export default async function AuthButton() {
       .select("name, admin")
       .eq("user_id", user.id)
       .maybeSingle();
-    
+
     userName = membership?.name;
     isAdmin = membership?.admin === true;
   }
@@ -31,10 +31,7 @@ export default async function AuthButton() {
       <>
         <div className="flex gap-4 items-center">
           <div>
-            <Badge
-              variant={"default"}
-              className="font-normal pointer-events-none"
-            >
+            <Badge variant={"default"} className="font-normal pointer-events-none">
               Please update .env.local file with anon key and url
             </Badge>
           </div>

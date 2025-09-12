@@ -22,19 +22,17 @@ export default function GearPage() {
   const loadData = async () => {
     try {
       const supabase = createClient();
-      
-      const [
-        { data: allGear, error: gearError },
-        { data: rentalData, error: rentalError }
-      ] = await Promise.all([
-        supabase
-          .from("Gear")
-          .select("id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated")
-          .order("category", { ascending: true }),
-        supabase
-          .from("Lent")
-          .select("gear_id, lent_date, returned")
-      ]);
+
+      const [{ data: allGear, error: gearError }, { data: rentalData, error: rentalError }] =
+        await Promise.all([
+          supabase
+            .from("Gear")
+            .select(
+              "id, name, num_available, category, price_tu_th, price_th_tu, price_week, description, total_times_rented, revenue_generated",
+            )
+            .order("category", { ascending: true }),
+          supabase.from("Lent").select("gear_id, lent_date, returned"),
+        ]);
 
       if (gearError || rentalError) {
         setError(gearError?.message || rentalError?.message || "Unknown error");
@@ -58,11 +56,11 @@ export default function GearPage() {
     try {
       // Remove the temporary ID for new gear creation
       const { id, ...gearDataWithoutId } = gearData;
-      
-      const response = await fetch('/api/admin/gear', {
-        method: 'POST',
+
+      const response = await fetch("/api/admin/gear", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(gearDataWithoutId),
       });
@@ -108,41 +106,44 @@ export default function GearPage() {
 
   // Calculate gear statistics
   const totalGear = gear.length;
-  const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-  const currentlyRentedCount = rentals.filter(r => {
-    const lentDate = new Date(r.lent_date).toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
+  const currentlyRentedCount = rentals.filter((r) => {
+    const lentDate = new Date(r.lent_date).toISOString().split("T")[0];
     return !r.returned && lentDate <= today;
   }).length;
-  const totalAvailableUnits = gear.reduce((sum, g) => sum + (g.num_available || 0), 0) - currentlyRentedCount;
-  
+  const totalAvailableUnits =
+    gear.reduce((sum, g) => sum + (g.num_available || 0), 0) - currentlyRentedCount;
+
   // Group gear by category
-  const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
-  const categoryStats = categories.map(category => {
-    const categoryGear = gear.filter(g => g.category === category);
+  const categories = Array.from(new Set(gear.map((g) => g.category))).filter(Boolean);
+  const categoryStats = categories.map((category) => {
+    const categoryGear = gear.filter((g) => g.category === category);
     const totalUnits = categoryGear.reduce((sum, g) => sum + (g.num_available || 0), 0);
     const totalItems = categoryGear.length;
-    const rentalCount = rentals.filter(r => {
-      const lentDate = new Date(r.lent_date).toISOString().split('T')[0];
-      return categoryGear.some(g => g.id === r.gear_id) && !r.returned && lentDate <= today;
+    const rentalCount = rentals.filter((r) => {
+      const lentDate = new Date(r.lent_date).toISOString().split("T")[0];
+      return categoryGear.some((g) => g.id === r.gear_id) && !r.returned && lentDate <= today;
     }).length;
-    
+
     return {
       category,
       total: totalItems,
       totalUnits,
       currentlyRented: rentalCount,
       availableUnits: Math.max(0, totalUnits - rentalCount),
-      utilizationRate: totalUnits > 0 ? Math.round((rentalCount / totalUnits) * 100) : 0
+      utilizationRate: totalUnits > 0 ? Math.round((rentalCount / totalUnits) * 100) : 0,
     };
   });
 
   // Calculate most popular gear (by rental frequency)
-  const gearRentalCounts = gear.map(g => {
-    const rentalCount = rentals.filter(r => r.gear_id === g.id).length;
-    return { ...g, rentalCount };
-  }).sort((a, b) => b.rentalCount - a.rentalCount);
+  const gearRentalCounts = gear
+    .map((g) => {
+      const rentalCount = rentals.filter((r) => r.gear_id === g.id).length;
+      return { ...g, rentalCount };
+    })
+    .sort((a, b) => b.rentalCount - a.rentalCount);
 
-  const popularGear = gearRentalCounts.slice(0,5);
+  const popularGear = gearRentalCounts.slice(0, 5);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -151,7 +152,7 @@ export default function GearPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Gear Management</h1>
           <p className="text-gray-600 mt-2">Manage equipment inventory and availability</p>
         </div>
-        <Button 
+        <Button
           className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
           onClick={handleAddNewGear}
         >
@@ -209,7 +210,6 @@ export default function GearPage() {
 
       {/* Category Breakdown */}
       <div className="grid grid-cols-1 gap-8">
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -220,7 +220,10 @@ export default function GearPage() {
           <CardContent>
             <div className="space-y-3">
               {popularGear.map((item, index) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-bold text-blue-600">#{index + 1}</span>
@@ -254,15 +257,15 @@ export default function GearPage() {
       <GearEditModal
         gear={{
           id: Date.now(),
-          name: '',
-          category: '',
+          name: "",
+          category: "",
           num_available: 0,
-          description: '',
+          description: "",
           price_tu_th: null,
           price_th_tu: null,
           price_week: null,
           total_times_rented: 0,
-          revenue_generated: 0
+          revenue_generated: 0,
         }}
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

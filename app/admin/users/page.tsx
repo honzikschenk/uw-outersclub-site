@@ -28,15 +28,15 @@ export default async function UsersPage() {
   }
 
   const members = allMembers || [];
-  const activeMembers = members.filter(m => m.valid);
-  const inactiveMembers = members.filter(m => !m.valid);
-  const adminMembers = members.filter(m => m.admin);
+  const activeMembers = members.filter((m) => m.valid);
+  const inactiveMembers = members.filter((m) => !m.valid);
+  const adminMembers = members.filter((m) => m.admin);
 
   // Calculate recent joiners (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentJoiners = members.filter(m => 
-    m.joined_on && new Date(m.joined_on) >= thirtyDaysAgo
+  const recentJoiners = members.filter(
+    (m) => m.joined_on && new Date(m.joined_on) >= thirtyDaysAgo,
   );
 
   return (

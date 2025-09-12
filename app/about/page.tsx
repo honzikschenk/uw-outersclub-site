@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Term, MembershipFee } from "@/utils/global-variables";
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-  } from "@/components/ui/accordion";  
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const metadata = {
   title: "About | UW Outers Club",
@@ -18,16 +18,14 @@ export default async function About() {
       <section id="about-us">
         <h1 className="text-3xl font-bold mb-4">About the Outers Club</h1>
         <p>
-          We're a community of outdoor enthusiasts who focus on activities
-          throughout all 4 seasons. When it's warm we enjoy camping, hiking,
-          canoeing, climbing, cycling, slacklining, and a whole lot more. When
-          it's nice and snowy, we go winter camping, snowshoeing, and
-          cross-country skiing until it warms up again. Our members have been
-          doing this for over 40 years!
+          We're a community of outdoor enthusiasts who focus on activities throughout all 4 seasons.
+          When it's warm we enjoy camping, hiking, canoeing, climbing, cycling, slacklining, and a
+          whole lot more. When it's nice and snowy, we go winter camping, snowshoeing, and
+          cross-country skiing until it warms up again. Our members have been doing this for over 40
+          years!
           <br />
           <br />
-          The per term membership fee provides you with access to all our shared
-          resources:
+          The per term membership fee provides you with access to all our shared resources:
         </p>
         <ul className="list-disc list-inside ml-6">
           <li>low-cost equipment rentals,</li>
@@ -36,16 +34,16 @@ export default async function About() {
         </ul>
         <br />
         <p>
-          We are ALL volunteers. We like to encourage everyone to participate in
-          the organization of club events. Please contact our helpful executive
-          team for more information, assistance, or any comments/suggestions.
+          We are ALL volunteers. We like to encourage everyone to participate in the organization of
+          club events. Please contact our helpful executive team for more information, assistance,
+          or any comments/suggestions.
         </p>
       </section>
       <section id="become-a-member">
         <h2 className="text-2xl font-semibold mb-4 mt-8">Become a Member</h2>
         <p>
-          Memberships are on a per term basis. Membership for {Term} is $
-          {MembershipFee} for the term.
+          Memberships are on a per term basis. Membership for {Term} is ${MembershipFee} for the
+          term.
           <br />
           <br />
           The benefits of becoming a member:
@@ -56,13 +54,10 @@ export default async function About() {
           <li>participation on trips and at social gatherings.</li>
         </ul>
         <br />
-        <h2 className="text-xl font-semibold mb-2 mt-4">
-          How to become a member:
-        </h2>
+        <h2 className="text-xl font-semibold mb-2 mt-4">How to become a member:</h2>
         <ol className="list-decimal list-inside ml-6">
           <li>
-            Sign up for the Outers Club membership on the UW Athletics and
-            Recreation website
+            Sign up for the Outers Club membership on the UW Athletics and Recreation website
             <ul className="list-disc list-inside ml-6">
               <li>
                 Go to{" "}
@@ -103,9 +98,7 @@ export default async function About() {
             </a>{" "}
             to stay up-to-date on announcements and events.
           </li>
-          <li>
-            Click the button below to register to rent gear
-          </li>
+          <li>Click the button below to register to rent gear</li>
         </ol>
         <Button className="mt-4" variant="outline">
           <a href="/sign-up">Sign Up</a>
@@ -114,27 +107,22 @@ export default async function About() {
       <section id="get-involved">
         <h2 className="text-2xl font-semibold mb-4 mt-8">Get More Involved</h2>
         <p>
-          Want to help out? We’re always looking for volunteers to help organize
-          trips, lead events, or contribute to our club’s operations. Reach out
-          to us at our meetings or contact us{" "}
-          <a
-            className="text-green-500 hover:text-green-700 underline"
-            href="/contact"
-          >
+          Want to help out? We’re always looking for volunteers to help organize trips, lead events,
+          or contribute to our club’s operations. Reach out to us at our meetings or contact us{" "}
+          <a className="text-green-500 hover:text-green-700 underline" href="/contact">
             here
           </a>{" "}
           to learn more about how you can get involved.
         </p>
         <h2 className="text-xl font-semibold mb-2 mt-4">Organize a Trip</h2>
         <p>
-          Trips can vary from short day hikes to longer, week long canoeing
-          trips. Organizing a trip is a great way to gain some leadership
-          experience.
+          Trips can vary from short day hikes to longer, week long canoeing trips. Organizing a trip
+          is a great way to gain some leadership experience.
         </p>
         <h2 className="text-xl font-semibold mb-2 mt-4">Volunteer</h2>
         <p>
-          The club could not run without our volunteers. All volunteers get free
-          rentals! Some things you can help with as a volunteer:
+          The club could not run without our volunteers. All volunteers get free rentals! Some
+          things you can help with as a volunteer:
         </p>
         <ul className="list-disc list-inside ml-6">
           <li>equipment rentals during the office hours,</li>
@@ -145,9 +133,8 @@ export default async function About() {
         </ul>
         <h2 className="text-xl font-semibold mb-2 mt-4">Become an Executive</h2>
         <p>
-          As an executive you can take an active role in shaping the future of
-          the club. Executives are usually recruited from members who have been
-          volunteering for at least a term.
+          As an executive you can take an active role in shaping the future of the club. Executives
+          are usually recruited from members who have been volunteering for at least a term.
         </p>
       </section>
       <section id="our-executives">
@@ -210,13 +197,18 @@ export default async function About() {
           </div>
         </div>
         <Accordion type="single" collapsible>
-        <AccordionItem value="item-1">
+          <AccordionItem value="item-1">
             <AccordionTrigger>Past Execs</AccordionTrigger>
             <AccordionContent>
-            Thanks to student visionaries, the Outers Club has been a successful club since the early 1970s. Our special thanks goes to all the volunteers who have contributed to this great club throughout the years. The following is only a growing list of people who have spent time and effort to make the Outers Club such a unique and friendly place that it is today. We like to hear from every one of our people, they are part of the Club's past, present, and inspiration for future volunteers.
-            <br />
-            <br />
-            <ul className="list-disc list-inside ml-6">
+              Thanks to student visionaries, the Outers Club has been a successful club since the
+              early 1970s. Our special thanks goes to all the volunteers who have contributed to
+              this great club throughout the years. The following is only a growing list of people
+              who have spent time and effort to make the Outers Club such a unique and friendly
+              place that it is today. We like to hear from every one of our people, they are part of
+              the Club's past, present, and inspiration for future volunteers.
+              <br />
+              <br />
+              <ul className="list-disc list-inside ml-6">
                 <li>Tim Hill</li>
                 <li>Claire Parrott</li>
                 <li>Evan Takefman</li>
@@ -224,7 +216,10 @@ export default async function About() {
                 <li>Christian Barna; President, Co-Leader. 2016-2020</li>
                 <li>Micaela Yawney; Co-Leader. 2017-2020</li>
                 <li>Peter Tao; Executive, equipment room. 2017-2018</li>
-                <li>Jan Gosmann; Executive, bouldering clinics, equipment room. 2014–2018. Jan moved to Munich, Germany and continues to enjoy the outdoors in the Alps.</li>
+                <li>
+                  Jan Gosmann; Executive, bouldering clinics, equipment room. 2014–2018. Jan moved
+                  to Munich, Germany and continues to enjoy the outdoors in the Alps.
+                </li>
                 <li>Elif Tuzlalı; Executive, equipment room. 2017–2018</li>
                 <li>Chris Garland; Executive, equipment room, trip leader. 2011-2017.</li>
                 <li>Amir Panahi; Executive, equipment room, trip leader. 2014-2017.</li>
@@ -239,48 +234,102 @@ export default async function About() {
                 <li>Nicolas Gillis; Executive, equipment room. 2012-2014.</li>
                 <li>Rajat Mittal, Executive, equipment room. 2011-2014.</li>
                 <li>Laura Mančinska; Executive, equipment room, social. 2009-2014.</li>
-                <li>Yelda Turkan Equipment room person, 2009-2012. Yelda lives in Ames Iowa, the corn country.</li>
-                <li>Koorus Bookan Treasurer, equipment room, social, 1990-2011. Koorus lives in Waterloo.</li>
-                <li>Luiz Celso Gomes Equipment room, 2008-2010. Luiz is travelling in South America</li>
-                <li>Brett Hamilton , Equipment room, Hiking, 2003-2008, Brett is starting his graduate studies in U of Calgary this Fall. Last seen in northern Manitoba.</li>
-                <li>Stefan Buettcher Equipment room, 2004-2007, Stefan is travelling this summer before start working at Google.</li>
-                <li>Aurelie Labbe, Equipment room and president, 2001-2004. Aurlie lives in Quebec city.</li>
+                <li>
+                  Yelda Turkan Equipment room person, 2009-2012. Yelda lives in Ames Iowa, the corn
+                  country.
+                </li>
+                <li>
+                  Koorus Bookan Treasurer, equipment room, social, 1990-2011. Koorus lives in
+                  Waterloo.
+                </li>
+                <li>
+                  Luiz Celso Gomes Equipment room, 2008-2010. Luiz is travelling in South America
+                </li>
+                <li>
+                  Brett Hamilton , Equipment room, Hiking, 2003-2008, Brett is starting his graduate
+                  studies in U of Calgary this Fall. Last seen in northern Manitoba.
+                </li>
+                <li>
+                  Stefan Buettcher Equipment room, 2004-2007, Stefan is travelling this summer
+                  before start working at Google.
+                </li>
+                <li>
+                  Aurelie Labbe, Equipment room and president, 2001-2004. Aurlie lives in Quebec
+                  city.
+                </li>
                 <li>Jennifer Chen, Equipment room, 1999-2002, Jennifer lives in Calgary.</li>
-                <li>Darren Cope, Equipment room, 1999-2002, Darren lives in Ontario somewhere nearby...</li>
-                <li>Craig Howthorne, equipment room, president, 1997-2002. Craig was last seen in Germany.</li>
-                <li>Neil DeBoni, chair person, various positions, 1998-2000. Neil works in Calgary area.</li>
+                <li>
+                  Darren Cope, Equipment room, 1999-2002, Darren lives in Ontario somewhere
+                  nearby...
+                </li>
+                <li>
+                  Craig Howthorne, equipment room, president, 1997-2002. Craig was last seen in
+                  Germany.
+                </li>
+                <li>
+                  Neil DeBoni, chair person, various positions, 1998-2000. Neil works in Calgary
+                  area.
+                </li>
                 <li>Bill Rosehart, Newsletter, 1998-2001. Bill works at university of Calgary.</li>
-                <li>Eve Bezaire Dussault, bouldering wall, president, 1997-2000. Eve last was seen in southern Ontario:)</li>
-                <li>Morven Duncan, 1995-2000, President and equipment room person. Morven lives in Scotland.</li>
-                <li>David Kidston, membership, and president, 1997-1998, Dave is living in Ottawa</li>
-                <li>Karsten Verbeurgt, president, trail, and bouldering wall, 1992-1998, Karsten is living in Calgary.</li>
+                <li>
+                  Eve Bezaire Dussault, bouldering wall, president, 1997-2000. Eve last was seen in
+                  southern Ontario:)
+                </li>
+                <li>
+                  Morven Duncan, 1995-2000, President and equipment room person. Morven lives in
+                  Scotland.
+                </li>
+                <li>
+                  David Kidston, membership, and president, 1997-1998, Dave is living in Ottawa
+                </li>
+                <li>
+                  Karsten Verbeurgt, president, trail, and bouldering wall, 1992-1998, Karsten is
+                  living in Calgary.
+                </li>
                 <li>David Neuhamsie(?),Equipment room, 1997-1998. David is back to Switzerland.</li>
                 <li>Trish Unger, hiking, president, 1995-1998. Trish lives in Waterloo.</li>
                 <li>Dan Currie, Ski Trails person, 1996-1997, Dan lives in Waterloo</li>
-                <li>James Taylor, Kayaking, 1995-1997, James traveled to Nepal, and was last seen in Toronto.</li>
+                <li>
+                  James Taylor, Kayaking, 1995-1997, James traveled to Nepal, and was last seen in
+                  Toronto.
+                </li>
                 <li>Kyle McKenzie Newsletter editor and president, 1993-1997.</li>
-                <li>Yann Roth, Equipment room person. 1996-1997. Yann successfully cycled to Inuvik and back. He was last seen in Switzerland</li>
-                <li>Stefanie Hackel , Secretry.1996-1997, Stefanie finished her studies and is living in Germany(?).</li>
+                <li>
+                  Yann Roth, Equipment room person. 1996-1997. Yann successfully cycled to Inuvik
+                  and back. He was last seen in Switzerland
+                </li>
+                <li>
+                  Stefanie Hackel , Secretry.1996-1997, Stefanie finished her studies and is living
+                  in Germany(?).
+                </li>
                 <li>Soeren Peik, Social.1995-1996, Soeren is living in Germany.</li>
                 <li>Gudrun Wessel, Memebership person.1992-1996, Gudrun is living in Germany.</li>
-                <li>Fabrice Jaubert, Equipment room person.1992-1996, Fabrice is living in Montreal.</li>
+                <li>
+                  Fabrice Jaubert, Equipment room person.1992-1996, Fabrice is living in Montreal.
+                </li>
                 <li>Daniela Hermann Secretry. 1994-1995, Daniela is living Germany</li>
                 <li>Joanne Pushkarenko(?), Secretry, 1994-1996. Joanne works in Markham(?).</li>
                 <li>Stewart McIlwain,President. 1995-1996, Stewart is working in Ottawa..</li>
                 <li>Eric Davis, Treasurer. 1993-1994, Eric is living in BC.</li>
-                <li>Lutz Nuecker, Newsletter.1994-1995, Lutz is finishing his studies in Germany.</li>
+                <li>
+                  Lutz Nuecker, Newsletter.1994-1995, Lutz is finishing his studies in Germany.
+                </li>
                 <li>Marie Lagimodier, co-president,1992-1993, Marie moved to Saskatchewan(?).</li>
                 <li>Nora Sleumer President, 1992-1993,Nora is living in Switzerland.</li>
                 <li>Eric Praetzel, Treasurer. 1992-1993, Eric is living in Waterloo.</li>
-                <li>Andrew Mylly, 1991-1994 Andrew lives in Vancouver and works for federal government. Andrew still is involved in canoeing and kayaking.</li>
+                <li>
+                  Andrew Mylly, 1991-1994 Andrew lives in Vancouver and works for federal
+                  government. Andrew still is involved in canoeing and kayaking.
+                </li>
                 <li>Chris Kennedy, President.1990-1991, Chris is teaching at U of T.</li>
                 <li>Sharon Regan, President.1989-1991, Sharon is working in northern Ontario.</li>
-                <li>​Greg Derbyshire. 1974-1977, Founder and the first president of Outers Club.</li>
-            </ul>
+                <li>
+                  ​Greg Derbyshire. 1974-1977, Founder and the first president of Outers Club.
+                </li>
+              </ul>
             </AccordionContent>
-        </AccordionItem>
+          </AccordionItem>
         </Accordion>
-
       </section>
       <section id="constitution">
         <h2 className="text-2xl font-semibold mb-4 mt-8">Constitution</h2>

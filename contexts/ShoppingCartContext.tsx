@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 export interface CartItem {
   id: string;
@@ -14,7 +14,7 @@ export interface CartItem {
     from: Date;
     to: Date;
   };
-  rentalType: 'tu_th' | 'th_tu' | 'week' | 'extended' | 'custom';
+  rentalType: "tu_th" | "th_tu" | "week" | "extended" | "custom";
   price: number;
   breakdown?: string; // Price breakdown explanation for extended rentals
 }
@@ -37,7 +37,7 @@ export function ShoppingCartProvider({ children }: { children: React.ReactNode }
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('gearRentalCart');
+    const savedCart = localStorage.getItem("gearRentalCart");
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
@@ -47,25 +47,25 @@ export function ShoppingCartProvider({ children }: { children: React.ReactNode }
           selectedDates: {
             from: new Date(item.selectedDates.from),
             to: new Date(item.selectedDates.to),
-          }
+          },
         }));
         setCartItems(cartWithDates);
       } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-        localStorage.removeItem('gearRentalCart');
+        console.error("Error loading cart from localStorage:", error);
+        localStorage.removeItem("gearRentalCart");
       }
     }
   }, []);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('gearRentalCart', JSON.stringify(cartItems));
+    localStorage.setItem("gearRentalCart", JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (item: CartItem) => {
-    setCartItems(prev => {
+    setCartItems((prev) => {
       // Check if item already exists in cart
-      const existingIndex = prev.findIndex(cartItem => cartItem.id === item.id);
+      const existingIndex = prev.findIndex((cartItem) => cartItem.id === item.id);
       if (existingIndex >= 0) {
         // Update existing item
         const updated = [...prev];
@@ -79,14 +79,12 @@ export function ShoppingCartProvider({ children }: { children: React.ReactNode }
   };
 
   const removeFromCart = (itemId: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== itemId));
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
   const updateCartItem = (itemId: string, updates: Partial<CartItem>) => {
-    setCartItems(prev => 
-      prev.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
-      )
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, ...updates } : item)),
     );
   };
 
@@ -103,20 +101,22 @@ export function ShoppingCartProvider({ children }: { children: React.ReactNode }
   };
 
   const isItemInCart = (itemId: string) => {
-    return cartItems.some(item => item.id === itemId);
+    return cartItems.some((item) => item.id === itemId);
   };
 
   return (
-    <ShoppingCartContext.Provider value={{
-      cartItems,
-      addToCart,
-      removeFromCart,
-      updateCartItem,
-      clearCart,
-      getTotalPrice,
-      getCartCount,
-      isItemInCart,
-    }}>
+    <ShoppingCartContext.Provider
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateCartItem,
+        clearCart,
+        getTotalPrice,
+        getCartCount,
+        isItemInCart,
+      }}
+    >
       {children}
     </ShoppingCartContext.Provider>
   );
@@ -125,7 +125,7 @@ export function ShoppingCartProvider({ children }: { children: React.ReactNode }
 export function useShoppingCart() {
   const context = useContext(ShoppingCartContext);
   if (context === undefined) {
-    throw new Error('useShoppingCart must be used within a ShoppingCartProvider');
+    throw new Error("useShoppingCart must be used within a ShoppingCartProvider");
   }
   return context;
 }

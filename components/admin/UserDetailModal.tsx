@@ -1,11 +1,6 @@
 "use client";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +34,7 @@ export default function UserDetailModal({ member, isOpen, onClose }: UserDetailM
             {member.name || "Unknown User"}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Basic Info */}
           <Card>
@@ -57,14 +52,16 @@ export default function UserDetailModal({ member, isOpen, onClose }: UserDetailM
                   <p className="text-sm font-mono">{member.user_id}</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   <div className="mt-1">
-                    <Badge 
+                    <Badge
                       variant={member.valid ? "default" : "secondary"}
-                      className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                      className={
+                        member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      }
                     >
                       {member.valid ? "Active" : "Inactive"}
                     </Badge>
@@ -84,15 +81,14 @@ export default function UserDetailModal({ member, isOpen, onClose }: UserDetailM
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium text-gray-600">Join Date</label>
                 <p className="flex items-center gap-2 mt-1">
                   <Calendar className="h-4 w-4 text-gray-400" />
-                  {member.joined_on 
+                  {member.joined_on
                     ? new Date(member.joined_on).toLocaleDateString()
-                    : "Not available"
-                  }
+                    : "Not available"}
                 </p>
               </div>
             </CardContent>
@@ -113,9 +109,7 @@ export default function UserDetailModal({ member, isOpen, onClose }: UserDetailM
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Edit Member
-            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">Edit Member</Button>
           </div>
         </div>
       </DialogContent>

@@ -12,8 +12,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
-} from 'recharts';
+  Legend,
+} from "recharts";
 
 interface CategoryStat {
   category: string;
@@ -31,13 +31,13 @@ interface GearCategoryChartProps {
 export default function GearCategoryChart({ categoryStats }: GearCategoryChartProps) {
   const colors = [
     "#3b82f6",
-    "#10b981", 
+    "#10b981",
     "#8b5cf6",
     "#f59e0b",
     "#ef4444",
     "#eab308",
     "#ec4899",
-    "#6366f1"
+    "#6366f1",
   ];
 
   // Prepare data for charts
@@ -47,7 +47,7 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
     available: cat.availableUnits,
     rented: cat.currentlyRented,
     utilizationRate: cat.utilizationRate,
-    fill: colors[index % colors.length]
+    fill: colors[index % colors.length],
   }));
 
   const RADIAN = Math.PI / 180;
@@ -57,11 +57,11 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         className="text-xs font-medium"
       >
@@ -85,7 +85,7 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
+                <XAxis
                   dataKey="category"
                   fontSize={11}
                   tickLine={false}
@@ -94,38 +94,24 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
                   textAnchor="end"
                   height={60}
                 />
-                <YAxis 
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip 
+                <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
                           <p className="font-medium capitalize">{label}</p>
-                          <p className="text-blue-600">
-                            {`Total Items: ${data.total}`}
-                          </p>
-                          <p className="text-green-600">
-                            {`Available: ${data.available}`}
-                          </p>
-                          <p className="text-orange-600">
-                            {`Currently Rented: ${data.rented}`}
-                          </p>
+                          <p className="text-blue-600">{`Total Items: ${data.total}`}</p>
+                          <p className="text-green-600">{`Available: ${data.available}`}</p>
+                          <p className="text-orange-600">{`Currently Rented: ${data.rented}`}</p>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Bar 
-                  dataKey="total" 
-                  fill="#3b82f6"
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -143,7 +129,7 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+              <PieChart>
                 <Pie
                   data={categoryStats}
                   cx="50%"
@@ -156,46 +142,39 @@ export default function GearCategoryChart({ categoryStats }: GearCategoryChartPr
                   nameKey="category"
                 >
                   {categoryStats.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={colors[index % colors.length]} 
-                  />
+                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                    <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
-                      <p className="font-medium capitalize">{data.category}</p>
-                      <p className="text-blue-600">
-                      {`Utilization Rate: ${data.utilizationRate}%`}
-                      </p>
-                      <p className="text-gray-600">
-                      {`${data.currentlyRented} of ${data.total} items rented`}
-                      </p>
-                    </div>
-                    );
-                  }
-                  return null;
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                          <p className="font-medium capitalize">{data.category}</p>
+                          <p className="text-blue-600">
+                            {`Utilization Rate: ${data.utilizationRate}%`}
+                          </p>
+                          <p className="text-gray-600">
+                            {`${data.currentlyRented} of ${data.total} items rented`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
-                <Legend 
-                  verticalAlign="bottom" 
+                <Legend
+                  verticalAlign="bottom"
                   height={36}
-                  formatter={(value) => (
-                  <span className="capitalize text-sm">{value}</span>
-                  )}
+                  formatter={(value) => <span className="capitalize text-sm">{value}</span>}
                 />
-                </PieChart>
+              </PieChart>
             </ResponsiveContainer>
           </div>
-          
+
           {categoryStats.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No category data available
-            </div>
+            <div className="text-center py-8 text-gray-500">No category data available</div>
           )}
         </CardContent>
       </Card>

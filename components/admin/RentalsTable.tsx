@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import LoadMoreBar from "@/components/ui/load-more-bar";
 import RentalEditModal from "./RentalEditModal";
-import { 
-  Search, 
-  Filter, 
-  ChevronDown, 
-  Edit, 
+import {
+  Search,
+  Filter,
+  ChevronDown,
+  Edit,
   MoreHorizontal,
   Calendar,
   Package,
@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   Clock,
   Save,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ interface EnhancedRental {
   gearName: string;
   gearCategory: string;
   userName: string;
-  status: 'returned' | 'overdue' | 'active';
+  status: "returned" | "overdue" | "active";
 }
 
 interface RentalsTableProps {
@@ -47,7 +47,9 @@ interface RentalsTableProps {
 
 export default function RentalsTable({ rentals }: RentalsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "overdue" | "returned">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "overdue" | "returned">(
+    "all",
+  );
   const [selectedRental, setSelectedRental] = useState<EnhancedRental | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const PAGE_SIZE = 20;
@@ -64,14 +66,14 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
     setEditedRows(rentals || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
-  setVisibleCount(PAGE_SIZE);
+    setVisibleCount(PAGE_SIZE);
   }, [rentals]);
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [searchTerm, filterStatus]);
 
   const handleDelete = (rentalId: number) => {
-    const rowIndex = editedRows.findIndex(rental => rental.id === rentalId);
+    const rowIndex = editedRows.findIndex((rental) => rental.id === rentalId);
     if (rowIndex === -1) return;
 
     setDeletedRows((prev) => {
@@ -86,15 +88,15 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
   };
 
   const handleToggleReturned = (rentalId: number) => {
-    const rentalIndex = editedRows.findIndex(rental => rental.id === rentalId);
+    const rentalIndex = editedRows.findIndex((rental) => rental.id === rentalId);
     if (rentalIndex === -1) return;
 
     const updatedRentals = editedRows.map((rental, idx) => {
       if (idx === rentalIndex) {
-        const updatedRental = { 
-          ...rental, 
+        const updatedRental = {
+          ...rental,
           returned: !rental.returned,
-          status: !rental.returned ? 'returned' : 'active' as 'returned' | 'overdue' | 'active'
+          status: !rental.returned ? "returned" : ("active" as "returned" | "overdue" | "active"),
         };
         return updatedRental;
       }
@@ -116,7 +118,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
       }
     }
 
-    setEditedRowIndices(prev => {
+    setEditedRowIndices((prev) => {
       const newSet = new Set(prev);
       if (isEdited) {
         newSet.add(rentalIndex);
@@ -128,7 +130,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
   };
 
   const handleRentalEdit = (rentalId: number) => {
-    const rental = editedRows.find(r => r.id === rentalId);
+    const rental = editedRows.find((r) => r.id === rentalId);
     if (rental) {
       setSelectedRental(rental);
       setIsEditModalOpen(true);
@@ -137,13 +139,11 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
 
   const handleSaveRental = (updatedRental: EnhancedRental) => {
     // Update the edited rows with the new rental data
-    const rentalIndex = editedRows.findIndex(r => r.id === updatedRental.id);
+    const rentalIndex = editedRows.findIndex((r) => r.id === updatedRental.id);
     if (rentalIndex !== -1) {
-      const updated = editedRows.map((row, idx) =>
-        idx === rentalIndex ? updatedRental : row
-      );
+      const updated = editedRows.map((row, idx) => (idx === rentalIndex ? updatedRental : row));
       setEditedRows(updated);
-      
+
       // Check if this rental was actually changed compared to original
       const original = originalRows[rentalIndex];
       let isEdited = false;
@@ -155,8 +155,8 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
           }
         }
       }
-      
-      setEditedRowIndices(prev => {
+
+      setEditedRowIndices((prev) => {
         const newSet = new Set(prev);
         if (isEdited) {
           newSet.add(rentalIndex);
@@ -205,7 +205,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
         .map(({ row }) => row);
 
       const deletedRowIds = Array.from(deletedRows)
-        .map(idx => originalRows[idx]?.id)
+        .map((idx) => originalRows[idx]?.id)
         .filter(Boolean);
 
       if (changedRows.length === 0 && deletedRowIds.length === 0) {
@@ -234,7 +234,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
       } else {
         const text = await res.text();
         throw new Error(
-          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`,
         );
       }
 
@@ -259,35 +259,34 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
 
   // Filter rentals
   const filteredRentals = editedRows.filter((rental) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       rental.gearName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rental.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rental.gearCategory.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesFilter = 
-      filterStatus === "all" ||
-      rental.status === filterStatus;
+    const matchesFilter = filterStatus === "all" || rental.status === filterStatus;
 
     return matchesSearch && matchesFilter;
   });
 
   const getStatusBadge = (status: string, dueDate: string | null) => {
     switch (status) {
-      case 'returned':
+      case "returned":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
             <CheckCircle className="h-3 w-3 mr-1" />
             Returned
           </Badge>
         );
-      case 'overdue':
+      case "overdue":
         return (
           <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
             <AlertTriangle className="h-3 w-3 mr-1" />
             Overdue
           </Badge>
         );
-      case 'active':
+      case "active":
         return (
           <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
             <Clock className="h-3 w-3 mr-1" />
@@ -316,7 +315,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
               <Calendar className="h-5 w-5" />
               Rental Transactions
             </CardTitle>
-            
+
             {hasChanges && (
               <Button onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700">
                 <Save className="h-4 w-4 mr-2" />
@@ -324,7 +323,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
               </Button>
             )}
           </div>
-          
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative">
@@ -336,7 +335,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                 className="pl-10 w-full sm:w-64"
               />
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
@@ -367,16 +366,19 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
         {/* Grid View - Works on all screen sizes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {pagedRentals.map((rental) => {
-            const originalIndex = editedRows.findIndex(r => r.id === rental.id);
+            const originalIndex = editedRows.findIndex((r) => r.id === rental.id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
-            
+
             return (
-              <Card 
-                key={rental.id} 
+              <Card
+                key={rental.id}
                 className={`hover:shadow-lg transition-all duration-200 group ${
-                  isDeleted ? 'bg-red-50 opacity-60 line-through' : 
-                  isEdited ? 'bg-yellow-50 border-yellow-200' : ''
+                  isDeleted
+                    ? "bg-red-50 opacity-60 line-through"
+                    : isEdited
+                      ? "bg-yellow-50 border-yellow-200"
+                      : ""
                 }`}
               >
                 <CardContent className="p-4">
@@ -400,7 +402,11 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -409,7 +415,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Rental
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleToggleReturned(rental.id)}
                           className="text-blue-600"
                         >
@@ -425,7 +431,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                             </>
                           )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDelete(rental.id)}
                           className={isDeleted ? "text-green-600" : "text-red-600"}
                         >
@@ -444,11 +450,9 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
-                  <div className="mb-3">
-                    {getStatusBadge(rental.status, rental.due_date)}
-                  </div>
-                  
+
+                  <div className="mb-3">{getStatusBadge(rental.status, rental.due_date)}</div>
+
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                     <div>
                       <span className="font-medium">Rented:</span>
@@ -458,7 +462,9 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                     <div>
                       <span className="font-medium">Due:</span>
                       <br />
-                      {rental.due_date ? new Date(rental.due_date).toLocaleDateString() : 'No due date'}
+                      {rental.due_date
+                        ? new Date(rental.due_date).toLocaleDateString()
+                        : "No due date"}
                     </div>
                   </div>
 
@@ -467,12 +473,18 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                     <div className="mt-3 pt-2 border-t border-gray-200">
                       <div className="flex items-center gap-1">
                         {isEdited && (
-                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300"
+                          >
                             Modified
                           </Badge>
                         )}
                         {isDeleted && (
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-red-100 text-red-800 border-red-300"
+                          >
                             Marked for deletion
                           </Badge>
                         )}
@@ -484,7 +496,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
             );
           })}
         </div>
-        
+
         {filteredRentals.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No rentals found matching your criteria.

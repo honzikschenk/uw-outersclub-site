@@ -34,7 +34,13 @@ interface GearEditModalProps {
   existingCategories?: string[];
 }
 
-export default function GearEditModal({ gear, isOpen, onClose, onSave, existingCategories = [] }: GearEditModalProps) {
+export default function GearEditModal({
+  gear,
+  isOpen,
+  onClose,
+  onSave,
+  existingCategories = [],
+}: GearEditModalProps) {
   const [formData, setFormData] = useState<GearItem | null>(gear);
   const [isCreatingNewCategory, setIsCreatingNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -48,14 +54,13 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
     "sleeping items",
     "tents",
     "watersports",
-    "winter"
+    "winter",
   ];
 
   // Combine predefined and existing categories, remove duplicates
-  const allCategories = Array.from(new Set([
-    ...predefinedCategories,
-    ...existingCategories
-  ])).sort();
+  const allCategories = Array.from(
+    new Set([...predefinedCategories, ...existingCategories]),
+  ).sort();
 
   // Update form data when gear prop changes
   React.useEffect(() => {
@@ -65,7 +70,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         if (isCreatingNewCategory) {
           setIsCreatingNewCategory(false);
           setNewCategoryName("");
@@ -74,15 +79,15 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
         }
       }
     };
-    
+
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
     }
-    
+
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose, isCreatingNewCategory]);
 
@@ -94,11 +99,11 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
   };
 
   const handleInputChange = (field: keyof GearItem, value: string | number | null) => {
-    setFormData(prev => prev ? { ...prev, [field]: value } : null);
+    setFormData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
 
   const handleCategorySelect = (category: string) => {
-    handleInputChange('category', category);
+    handleInputChange("category", category);
     setIsCreatingNewCategory(false);
     setNewCategoryName("");
   };
@@ -106,23 +111,23 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
   const handleCreateNewCategory = () => {
     if (newCategoryName.trim()) {
       const normalizedName = newCategoryName.trim().toLowerCase();
-      
+
       // Check if category already exists
       if (allCategories.includes(normalizedName)) {
         alert("This category already exists. Please choose a different name.");
         return;
       }
-      
-      handleInputChange('category', normalizedName);
+
+      handleInputChange("category", normalizedName);
       setIsCreatingNewCategory(false);
       setNewCategoryName("");
     }
   };
 
   const handleNewCategoryKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleCreateNewCategory();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsCreatingNewCategory(false);
       setNewCategoryName("");
     }
@@ -135,7 +140,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={handleBackdropClick}
     >
@@ -163,19 +168,19 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
               <FileText className="h-4 w-4" />
               Basic Information
             </h3>
-            
+
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="name">Item Name</Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder="Enter gear name"
                   className="w-full"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="category">Category</Label>
                 <DropdownMenu>
@@ -210,7 +215,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
+
                 {isCreatingNewCategory && (
                   <div className="mt-2 space-y-2">
                     <Input
@@ -250,8 +255,8 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
               <textarea
                 id="description"
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                value={formData.description || ""}
+                onChange={(e) => handleInputChange("description", e.target.value)}
                 placeholder="Enter item description"
                 rows={3}
               />
@@ -264,7 +269,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
               <Archive className="h-4 w-4" />
               Inventory
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="num_available">Units Available</Label>
@@ -273,16 +278,25 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                   type="number"
                   min="0"
                   value={formData.num_available}
-                  onChange={(e) => handleInputChange('num_available', e.target.value ? parseInt(e.target.value) : 0)}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "num_available",
+                      e.target.value ? parseInt(e.target.value) : 0,
+                    )
+                  }
                 />
               </div>
-              
+
               <div className="flex items-center gap-2 pt-6">
-                <Badge 
+                <Badge
                   variant={formData.num_available > 0 ? "default" : "secondary"}
-                  className={formData.num_available > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                  className={
+                    formData.num_available > 0
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }
                 >
-                  {formData.num_available > 0 ? 'In Stock' : 'Out of Stock'}
+                  {formData.num_available > 0 ? "In Stock" : "Out of Stock"}
                 </Badge>
               </div>
             </div>
@@ -294,7 +308,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
               <DollarSign className="h-4 w-4" />
               Pricing
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="price_tu_th">Tue-Thu Price</Label>
@@ -303,12 +317,17 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price_tu_th || ''}
-                  onChange={(e) => handleInputChange('price_tu_th', e.target.value ? parseFloat(e.target.value) : null)}
+                  value={formData.price_tu_th || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "price_tu_th",
+                      e.target.value ? parseFloat(e.target.value) : null,
+                    )
+                  }
                   placeholder="0.00"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="price_th_tu">Thu-Tue Price</Label>
                 <Input
@@ -316,12 +335,17 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price_th_tu || ''}
-                  onChange={(e) => handleInputChange('price_th_tu', e.target.value ? parseFloat(e.target.value) : null)}
+                  value={formData.price_th_tu || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "price_th_tu",
+                      e.target.value ? parseFloat(e.target.value) : null,
+                    )
+                  }
                   placeholder="0.00"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="price_week">Weekly Price</Label>
                 <Input
@@ -329,8 +353,13 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price_week || ''}
-                  onChange={(e) => handleInputChange('price_week', e.target.value ? parseFloat(e.target.value) : null)}
+                  value={formData.price_week || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "price_week",
+                      e.target.value ? parseFloat(e.target.value) : null,
+                    )
+                  }
                   placeholder="0.00"
                 />
               </div>
@@ -343,7 +372,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
               <Hash className="h-4 w-4" />
               Statistics
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <Label className="text-sm text-gray-600">Total Times Rented</Label>
@@ -351,7 +380,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
                   {formData.total_times_rented || 0}
                 </p>
               </div>
-              
+
               <div className="p-4 bg-gray-50 rounded-lg">
                 <Label className="text-sm text-gray-600">Revenue Generated</Label>
                 <p className="text-2xl font-bold text-green-600">
@@ -367,9 +396,7 @@ export default function GearEditModal({ gear, isOpen, onClose, onSave, existingC
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Changes
-          </Button>
+          <Button onClick={handleSave}>Save Changes</Button>
         </div>
       </div>
     </div>

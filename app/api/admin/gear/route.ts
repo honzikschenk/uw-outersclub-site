@@ -14,18 +14,15 @@ export async function POST(request: Request) {
         name: requestBody.name,
         category: requestBody.category,
         num_available: requestBody.num_available || 0,
-        description: requestBody.description || '',
+        description: requestBody.description || "",
         price_tu_th: requestBody.price_tu_th,
         price_th_tu: requestBody.price_th_tu,
         price_week: requestBody.price_week,
         total_times_rented: 0,
-        revenue_generated: 0
+        revenue_generated: 0,
       };
 
-      const { data, error } = await supabase
-        .from("Gear")
-        .insert([gearData])
-        .select();
+      const { data, error } = await supabase.from("Gear").insert([gearData]).select();
 
       if (error) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
@@ -41,7 +38,7 @@ export async function POST(request: Request) {
     for (const edited of editedRows || []) {
       const original = originalRows.find((row: any) => row.id === edited.id);
       if (!original) continue;
-      
+
       // Only update if something changed
       const changedFields: Record<string, any> = {};
       for (const key of Object.keys(edited)) {
@@ -50,13 +47,10 @@ export async function POST(request: Request) {
           changedFields[key] = edited[key];
         }
       }
-      
+
       if (Object.keys(changedFields).length > 0) {
-        const { error } = await supabase
-          .from("Gear")
-          .update(changedFields)
-          .eq("id", edited.id);
-        
+        const { error } = await supabase.from("Gear").update(changedFields).eq("id", edited.id);
+
         if (error) errors.push(`Update failed for gear id ${edited.id}: ${error.message}`);
       }
     }
@@ -85,16 +79,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message || "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err?.message || "Unknown error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request: Request) {
   try {
     const supabase = supabaseService;
-    
+
     // Check authentication and admin status
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -115,8 +115,8 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const gearId = searchParams.get('id');
-    
+    const gearId = searchParams.get("id");
+
     if (!gearId) {
       return NextResponse.json({ error: "Gear ID is required" }, { status: 400 });
     }
@@ -129,15 +129,15 @@ export async function DELETE(request: Request) {
       .eq("returned", false);
 
     if (activeRentals && activeRentals.length > 0) {
-      return NextResponse.json({ 
-        error: "Cannot delete gear with active rentals" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Cannot delete gear with active rentals",
+        },
+        { status: 400 },
+      );
     }
 
-    const { error } = await supabase
-      .from("Gear")
-      .delete()
-      .eq("id", gearId);
+    const { error } = await supabase.from("Gear").delete().eq("id", gearId);
 
     if (error) {
       console.error("Error deleting gear:", error);
@@ -145,7 +145,6 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-    
   } catch (error) {
     console.error("Gear delete error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

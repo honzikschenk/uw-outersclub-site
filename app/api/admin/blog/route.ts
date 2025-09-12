@@ -4,14 +4,20 @@ import { createClient } from "@/utils/supabase/server";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
   const { data: membership } = await supabase
     .from("Membership")
     .select("admin")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!membership?.admin) return { error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) } as const;
+  if (!membership?.admin)
+    return {
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    } as const;
   return { user } as const;
 }
 
@@ -23,7 +29,9 @@ export async function GET(req: Request) {
   if (id) {
     const { data, error: dbErr } = await supabaseService
       .from("BlogPost")
-      .select("id, slug, title, excerpt, content_html, cover_image_url, published, published_at, updated_at")
+      .select(
+        "id, slug, title, excerpt, content_html, cover_image_url, published, published_at, updated_at",
+      )
       .eq("id", id)
       .maybeSingle();
     if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
@@ -46,7 +54,10 @@ export async function POST(req: Request) {
   const excerpt = (body.excerpt ?? "").trim();
   const content_html = (body.content_html ?? "").trim();
   if (!title || !excerpt || !content_html) {
-    return NextResponse.json({ error: "title, excerpt, and content_html are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "title, excerpt, and content_html are required" },
+      { status: 400 },
+    );
   }
   // Fetch author name from Membership
   const { data: member } = await supabaseService
@@ -62,7 +73,7 @@ export async function POST(req: Request) {
     content_html,
     cover_image_url: body.cover_image_url || null,
     published: !!body.published,
-    published_at: body.published ? (body.published_at || now) : null,
+    published_at: body.published ? body.published_at || now : null,
     author_user_id: admin.user.id,
     author_name: member?.name || null,
   };
@@ -85,7 +96,10 @@ export async function PUT(req: Request) {
   const excerpt = (body.excerpt ?? "").trim();
   const content_html = (body.content_html ?? "").trim();
   if (!title || !excerpt || !content_html) {
-    return NextResponse.json({ error: "title, excerpt, and content_html are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "title, excerpt, and content_html are required" },
+      { status: 400 },
+    );
   }
   const payload: any = {
     title,
@@ -94,7 +108,7 @@ export async function PUT(req: Request) {
     content_html,
     cover_image_url: body.cover_image_url ?? null,
     published: !!body.published,
-    published_at: body.published ? (body.published_at || now) : null,
+    published_at: body.published ? body.published_at || now : null,
   };
   const { data, error } = await supabaseService
     .from("BlogPost")

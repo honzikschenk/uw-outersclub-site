@@ -24,11 +24,7 @@ export default async function Page() {
     .select();
 
   if (error) {
-    return (
-      <div className="p-8 text-red-600">
-        Error loading categories: {error.message}
-      </div>
-    );
+    return <div className="p-8 text-red-600">Error loading categories: {error.message}</div>;
   }
 
   return (
@@ -41,9 +37,7 @@ export default async function Page() {
       <h1 className="text-4xl font-bold mb-8">Gear Categories</h1>
       <Alert className="mb-6">
         <TriangleAlert className="h-4 w-4" />
-        <AlertTitle className="text-red-700">
-          PLEASE READ BEFORE RENTING
-        </AlertTitle>
+        <AlertTitle className="text-red-700">PLEASE READ BEFORE RENTING</AlertTitle>
         <AlertDescription className="text-red-500">
           Please read our
           <RentingTermsDialog />
@@ -53,34 +47,27 @@ export default async function Page() {
       {categories && categories.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {Array.from(new Set(categories.map((cat) => cat.category))).map((category) => (
-            <Link
-              key={category}
-              href={`/gear/${encodeURIComponent(category)}`}
-            >
+            <Link key={category} href={`/gear/${encodeURIComponent(category)}`}>
               <Card className="shadow-md transition-transform hover:scale-105 cursor-pointer">
-          <CardHeader>
-            <CardTitle className="capitalize">{category}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Image
-              src={`/categories/${encodeURIComponent(category)}.jpg`}
-              alt={`${category} image`}
-              width={300}
-              height={300}
-              className="w-full h-80 object-cover rounded-t-md mb-4"
-            />
-            <div className="text-muted-foreground">
-              View all gear in this category
-            </div>
-          </CardContent>
+                <CardHeader>
+                  <CardTitle className="capitalize">{category}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Image
+                    src={`/categories/${encodeURIComponent(category)}.jpg`}
+                    alt={`${category} image`}
+                    width={300}
+                    height={300}
+                    className="w-full h-80 object-cover rounded-t-md mb-4"
+                  />
+                  <div className="text-muted-foreground">View all gear in this category</div>
+                </CardContent>
               </Card>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="text-lg text-muted-foreground">
-          No categories found.
-        </div>
+        <div className="text-lg text-muted-foreground">No categories found.</div>
       )}
     </div>
   );

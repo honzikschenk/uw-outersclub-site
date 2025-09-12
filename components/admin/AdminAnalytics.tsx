@@ -18,30 +18,36 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
     sevenDaysAgo.setDate(now.getDate() - 7);
 
     // Rental analytics
-    const recentRentals = lentItems.filter(item => 
-      item.lent_date && new Date(item.lent_date) >= sevenDaysAgo
+    const recentRentals = lentItems.filter(
+      (item) => item.lent_date && new Date(item.lent_date) >= sevenDaysAgo,
     );
-    
-    const popularGear = gear.map(item => {
-      const rentalCount = lentItems.filter(rental => rental.gear_id === item.id).length;
-      return { ...item, rentalCount };
-    }).sort((a, b) => b.rentalCount - a.rentalCount).slice(0, 5);
+
+    const popularGear = gear
+      .map((item) => {
+        const rentalCount = lentItems.filter((rental) => rental.gear_id === item.id).length;
+        return { ...item, rentalCount };
+      })
+      .sort((a, b) => b.rentalCount - a.rentalCount)
+      .slice(0, 5);
 
     // Member analytics
-    const newMembers = members.filter(member => 
-      member.joined_on && new Date(member.joined_on) >= thirtyDaysAgo
+    const newMembers = members.filter(
+      (member) => member.joined_on && new Date(member.joined_on) >= thirtyDaysAgo,
     );
 
     // Category analytics
-    const categoryStats = gear.reduce((acc: Record<string, { total: number; available: number }>, item) => {
-      const category = item.category || 'Uncategorized';
-      if (!acc[category]) {
-        acc[category] = { total: 0, available: 0 };
-      }
-      acc[category].total++;
-      acc[category].available += item.num_available || 0;
-      return acc;
-    }, {});
+    const categoryStats = gear.reduce(
+      (acc: Record<string, { total: number; available: number }>, item) => {
+        const category = item.category || "Uncategorized";
+        if (!acc[category]) {
+          acc[category] = { total: 0, available: 0 };
+        }
+        acc[category].total++;
+        acc[category].available += item.num_available || 0;
+        return acc;
+      },
+      {},
+    );
 
     // Rental trends - removed basic version since we have RentalChart component
 
@@ -49,14 +55,14 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
       recentRentals: recentRentals.length,
       popularGear,
       newMembers: newMembers.length,
-      categoryStats
+      categoryStats,
     };
   }, [lentItems, members, gear]);
 
   return (
     <div className="space-y-6">
       <h3 className="text-2xl font-bold">Analytics Overview</h3>
-      
+
       {/* Recent Activity */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
@@ -66,9 +72,7 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.recentRentals}</div>
-            <p className="text-xs text-muted-foreground">
-              In the last 7 days
-            </p>
+            <p className="text-xs text-muted-foreground">In the last 7 days</p>
           </CardContent>
         </Card>
 
@@ -79,9 +83,7 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.newMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              In the last 30 days
-            </p>
+            <p className="text-xs text-muted-foreground">In the last 30 days</p>
           </CardContent>
         </Card>
 
@@ -92,9 +94,7 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Object.keys(analytics.categoryStats).length}</div>
-            <p className="text-xs text-muted-foreground">
-              Active categories
-            </p>
+            <p className="text-xs text-muted-foreground">Active categories</p>
           </CardContent>
         </Card>
       </div>
@@ -120,7 +120,7 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                 <div className="text-right">
                   <p className="font-medium">{item.rentalCount} rentals</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.num_available ? `${item.num_available} available` : 'Out of stock'}
+                    {item.num_available ? `${item.num_available} available` : "Out of stock"}
                   </p>
                 </div>
               </div>
@@ -145,8 +145,8 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full" 
+                  <div
+                    className="bg-green-500 h-2 rounded-full"
                     style={{ width: `${(stats.available / stats.total) * 100}%` }}
                   ></div>
                 </div>

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   // Use the service role key to access the admin API
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   // Use the admin API to list all users and filter by id

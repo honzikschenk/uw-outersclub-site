@@ -6,18 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import LoadMoreBar from "@/components/ui/load-more-bar";
 import UserEditModal from "./UserEditModal";
-import { 
-  Search, 
-  Filter, 
-  ChevronDown, 
-  Edit, 
+import {
+  Search,
+  Filter,
+  ChevronDown,
+  Edit,
   MoreHorizontal,
   Users,
   UserCheck,
   Shield,
   Save,
   Trash2,
-  CheckCircle
+  CheckCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -57,14 +57,14 @@ export default function UserManagementTable({ members }: UserManagementTableProp
     setEditedRows(members || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
-  setVisibleCount(PAGE_SIZE);
+    setVisibleCount(PAGE_SIZE);
   }, [members]);
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [searchTerm, filterStatus]);
 
   const handleDelete = (userId: string) => {
-    const rowIndex = editedRows.findIndex(member => member.user_id === userId);
+    const rowIndex = editedRows.findIndex((member) => member.user_id === userId);
     if (rowIndex === -1) return;
 
     setDeletedRows((prev) => {
@@ -79,7 +79,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   };
 
   const handleUserEdit = (userId: string) => {
-    const member = editedRows.find(m => m.user_id === userId);
+    const member = editedRows.find((m) => m.user_id === userId);
     if (member) {
       setSelectedUser(member);
       setIsEditModalOpen(true);
@@ -96,13 +96,11 @@ export default function UserManagementTable({ members }: UserManagementTableProp
 
   const handleSaveUser = (updatedUser: Member) => {
     // Update the edited rows with the new user data
-    const userIndex = editedRows.findIndex(u => u.user_id === updatedUser.user_id);
+    const userIndex = editedRows.findIndex((u) => u.user_id === updatedUser.user_id);
     if (userIndex !== -1) {
-      const updated = editedRows.map((row, idx) =>
-        idx === userIndex ? updatedUser : row
-      );
+      const updated = editedRows.map((row, idx) => (idx === userIndex ? updatedUser : row));
       setEditedRows(updated);
-      
+
       // Check if this user was actually changed compared to original
       const original = originalRows[userIndex];
       let isEdited = false;
@@ -114,8 +112,8 @@ export default function UserManagementTable({ members }: UserManagementTableProp
           }
         }
       }
-      
-      setEditedRowIndices(prev => {
+
+      setEditedRowIndices((prev) => {
         const newSet = new Set(prev);
         if (isEdited) {
           newSet.add(userIndex);
@@ -150,10 +148,14 @@ export default function UserManagementTable({ members }: UserManagementTableProp
       }
 
       // Check if user is trying to remove their own admin status
-      const userChanges = editedRows.find(row => row.user_id === user.id);
-      const originalUser = originalRows.find(row => row.user_id === user.id);
+      const userChanges = editedRows.find((row) => row.user_id === user.id);
+      const originalUser = originalRows.find((row) => row.user_id === user.id);
       if (userChanges && originalUser && originalUser.admin && !userChanges.admin) {
-        if (!confirm("You are removing your own admin privileges. You will lose access to admin functions. Are you sure?")) {
+        if (
+          !confirm(
+            "You are removing your own admin privileges. You will lose access to admin functions. Are you sure?",
+          )
+        ) {
           return;
         }
       }
@@ -173,7 +175,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
         .map(({ row }) => row);
 
       const deletedRowIds = Array.from(deletedRows)
-        .map(idx => originalRows[idx]?.user_id)
+        .map((idx) => originalRows[idx]?.user_id)
         .filter(Boolean);
 
       if (changedRows.length === 0 && deletedRowIds.length === 0) {
@@ -202,7 +204,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
       } else {
         const text = await res.text();
         throw new Error(
-          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`,
         );
       }
 
@@ -227,11 +229,12 @@ export default function UserManagementTable({ members }: UserManagementTableProp
 
   // Filter members
   const filteredMembers = editedRows.filter((member) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       (member.name && member.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       member.user_id.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesFilter = 
+    const matchesFilter =
       filterStatus === "all" ||
       (filterStatus === "active" && member.valid) ||
       (filterStatus === "inactive" && !member.valid) ||
@@ -253,7 +256,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
               <Users className="h-5 w-5" />
               Member Management
             </CardTitle>
-            
+
             {hasChanges && (
               <Button onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700">
                 <Save className="h-4 w-4 mr-2" />
@@ -261,7 +264,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
               </Button>
             )}
           </div>
-          
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative">
@@ -273,7 +276,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                 className="pl-10 w-full sm:w-64"
               />
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
@@ -304,16 +307,19 @@ export default function UserManagementTable({ members }: UserManagementTableProp
         {/* Grid View */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pagedMembers.map((member) => {
-            const originalIndex = editedRows.findIndex(r => r.user_id === member.user_id);
+            const originalIndex = editedRows.findIndex((r) => r.user_id === member.user_id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
-            
+
             return (
-              <Card 
-                key={member.user_id} 
+              <Card
+                key={member.user_id}
                 className={`hover:shadow-lg transition-all duration-200 group ${
-                  isDeleted ? 'bg-red-50 opacity-60 line-through' : 
-                  isEdited ? 'bg-yellow-50 border-yellow-200' : ''
+                  isDeleted
+                    ? "bg-red-50 opacity-60 line-through"
+                    : isEdited
+                      ? "bg-yellow-50 border-yellow-200"
+                      : ""
                 }`}
               >
                 <CardContent className="p-4">
@@ -333,7 +339,11 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -342,7 +352,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Member
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDelete(member.user_id)}
                           className={isDeleted ? "text-green-600" : "text-red-600"}
                         >
@@ -361,24 +371,29 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
                   <div className="mb-3 flex flex-wrap gap-1">
-                    <Badge 
+                    <Badge
                       variant={member.valid ? "default" : "secondary"}
-                      className={member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                      className={
+                        member.valid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      }
                     >
                       <UserCheck className="h-3 w-3 mr-1" />
                       {member.valid ? "Active" : "Inactive"}
                     </Badge>
-                    
+
                     {member.admin && (
-                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                      <Badge
+                        variant="outline"
+                        className="bg-purple-100 text-purple-800 border-purple-300"
+                      >
                         <Shield className="h-3 w-3 mr-1" />
                         Admin
                       </Badge>
                     )}
                   </div>
-                  
+
                   {member.joined_on && (
                     <p className="text-xs text-gray-600">
                       Joined: {new Date(member.joined_on).toLocaleDateString()}
@@ -390,12 +405,18 @@ export default function UserManagementTable({ members }: UserManagementTableProp
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="flex items-center gap-1">
                         {isEdited && (
-                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300"
+                          >
                             Modified
                           </Badge>
                         )}
                         {isDeleted && (
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-red-100 text-red-800 border-red-300"
+                          >
                             Marked for deactivation
                           </Badge>
                         )}
@@ -407,7 +428,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
             );
           })}
         </div>
-        
+
         {filteredMembers.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No members found matching your criteria.

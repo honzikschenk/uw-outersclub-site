@@ -33,9 +33,7 @@ export default async function BlogPage() {
         <div className="text-center text-gray-500 py-20">No posts yet. Check back soon.</div>
       )}
 
-      {posts && posts.length > 0 && (
-        <LoadMoreClient posts={posts} />
-      )}
+      {posts && posts.length > 0 && <LoadMoreClient posts={posts} />}
     </div>
   );
 }

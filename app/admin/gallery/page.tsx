@@ -11,7 +11,9 @@ type GalleryRow = {
 
 export default async function AdminGalleryPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return redirect("/sign-in");
   const { data: membership } = await supabase
     .from("Membership")

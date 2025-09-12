@@ -10,8 +10,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   BarChart,
-  Bar
-} from 'recharts';
+  Bar,
+} from "recharts";
 
 interface Member {
   user_id: string;
@@ -29,12 +29,12 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
   // Generate data for the last 12 months
   const now = new Date();
   const months = [];
-  
+
   for (let i = 11; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push({
-      month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      fullDate: date
+      month: date.toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
+      fullDate: date,
     });
   }
 
@@ -42,16 +42,16 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
   let cumulativeCount = 0;
   const growthData = months.map(({ month, fullDate }) => {
     const nextMonth = new Date(fullDate.getFullYear(), fullDate.getMonth() + 1, 1);
-    
+
     // Count members who joined before this month
-    const membersJoinedByMonth = members.filter(member => {
+    const membersJoinedByMonth = members.filter((member) => {
       if (!member.joined_on) return false;
       const joinDate = new Date(member.joined_on);
       return joinDate < nextMonth;
     }).length;
 
     // Count new members in this specific month
-    const newMembersThisMonth = members.filter(member => {
+    const newMembersThisMonth = members.filter((member) => {
       if (!member.joined_on) return false;
       const joinDate = new Date(member.joined_on);
       return joinDate >= fullDate && joinDate < nextMonth;
@@ -61,21 +61,22 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
       month,
       total: membersJoinedByMonth,
       newMembers: newMembersThisMonth,
-      active: members.filter(member => {
+      active: members.filter((member) => {
         if (!member.joined_on) return false;
         const joinDate = new Date(member.joined_on);
         return joinDate < nextMonth && member.valid;
-      }).length
+      }).length,
     };
   });
 
-  const maxTotal = Math.max(...growthData.map(d => d.total), 1);
-  const maxNew = Math.max(...growthData.map(d => d.newMembers), 1);
+  const maxTotal = Math.max(...growthData.map((d) => d.total), 1);
+  const maxNew = Math.max(...growthData.map((d) => d.newMembers), 1);
 
   // Calculate growth rate
   const currentTotal = growthData[growthData.length - 1]?.total || 0;
   const previousTotal = growthData[growthData.length - 2]?.total || 0;
-  const growthRate = previousTotal > 0 ? Math.round(((currentTotal - previousTotal) / previousTotal) * 100) : 0;
+  const growthRate =
+    previousTotal > 0 ? Math.round(((currentTotal - previousTotal) / previousTotal) * 100) : 0;
 
   return (
     <Card>
@@ -100,8 +101,11 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
               <p className="text-sm text-gray-600">New This Month</p>
             </div>
             <div className="text-center">
-              <p className={`text-2xl font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {growthRate > 0 ? '+' : ''}{growthRate}%
+              <p
+                className={`text-2xl font-bold ${growthRate >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {growthRate > 0 ? "+" : ""}
+                {growthRate}%
               </p>
               <p className="text-sm text-gray-600">Growth Rate</p>
             </div>
@@ -114,101 +118,73 @@ export default function MembershipGrowthChart({ members }: MembershipGrowthChart
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={growthData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="month" 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
+                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
                             <p className="font-medium">{`${label}`}</p>
-                            <p className="text-blue-600">
-                              {`Total Members: ${payload[0]?.value}`}
-                            </p>
+                            <p className="text-blue-600">{`Total Members: ${payload[0]?.value}`}</p>
                             <p className="text-green-600">
                               {`Active Members: ${payload[1]?.value}`}
                             </p>
-                            <p className="text-orange-600">
-                              {`New Members: ${payload[2]?.value}`}
-                            </p>
+                            <p className="text-orange-600">{`New Members: ${payload[2]?.value}`}</p>
                           </div>
                         );
                       }
                       return null;
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="#3b82f6" 
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#3b82f6"
                     strokeWidth={3}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
                     activeDot={{ r: 6 }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="active" 
-                    stroke="#10b981" 
+                  <Line
+                    type="monotone"
+                    dataKey="active"
+                    stroke="#10b981"
                     strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                    dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="newMembers" 
-                    stroke="#f59e0b" 
+                  <Line
+                    type="monotone"
+                    dataKey="newMembers"
+                    stroke="#f59e0b"
                     strokeWidth={2}
-                    dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+                    dot={{ fill: "#f59e0b", strokeWidth: 2, r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            
+
             {/* Additional Bar Chart for New Members */}
             <div className="h-48 mt-6">
               <h4 className="font-medium mb-3">New Members by Month</h4>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={growthData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="month" 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
+                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
                             <p className="font-medium">{`${label}`}</p>
-                            <p className="text-orange-600">
-                              {`New Members: ${payload[0]?.value}`}
-                            </p>
+                            <p className="text-orange-600">{`New Members: ${payload[0]?.value}`}</p>
                           </div>
                         );
                       }
                       return null;
                     }}
                   />
-                  <Bar 
-                    dataKey="newMembers" 
-                    fill="#f59e0b"
-                    radius={[4, 4, 0, 0]}
-                  />
+                  <Bar dataKey="newMembers" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

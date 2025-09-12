@@ -1,0 +1,23 @@
+# Dependencies and builds
+node_modules
+.next
+out
+dist
+coverage
+
+# Lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated/runtime
+.vercel
+supabase/.temp
+
+# Assets
+public/
+public/
+public/
+public/
+public/
+public/

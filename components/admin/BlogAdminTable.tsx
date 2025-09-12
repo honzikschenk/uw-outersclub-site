@@ -55,7 +55,16 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     return "https://" + s; // bare domain or relative-ish -> make absolute
   };
   const sanitizeCfg = {
-    allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "span", "code", "pre", "hr"]),
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      "img",
+      "h1",
+      "h2",
+      "h3",
+      "span",
+      "code",
+      "pre",
+      "hr",
+    ]),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
       img: ["src", "alt", "title"],
@@ -107,12 +116,19 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
 
   const openNew = () => {
     setEditing(null);
-  setForm({ title: "", slug: "", excerpt: "", content_html: "", cover_image_url: "", published: false });
-  setSlugTouched(false);
-  setErrors({ title: false, excerpt: false, content: false });
-  setMode("edit");
-  didFocusEditorRef.current = false;
-  didSetInitialHtmlRef.current = false;
+    setForm({
+      title: "",
+      slug: "",
+      excerpt: "",
+      content_html: "",
+      cover_image_url: "",
+      published: false,
+    });
+    setSlugTouched(false);
+    setErrors({ title: false, excerpt: false, content: false });
+    setMode("edit");
+    didFocusEditorRef.current = false;
+    didSetInitialHtmlRef.current = false;
     setIsOpen(true);
   };
 
@@ -132,8 +148,8 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     setSlugTouched(true);
     setErrors({ title: false, excerpt: false, content: false });
     setMode("edit");
-  didFocusEditorRef.current = false;
-  didSetInitialHtmlRef.current = false;
+    didFocusEditorRef.current = false;
+    didSetInitialHtmlRef.current = false;
     setIsOpen(true);
   };
 
@@ -206,9 +222,13 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     body.excerpt = excerpt;
     // Sanitize HTML for storage
     body.content_html = sanitizeHtml(form.content_html || "", sanitizeCfg as any);
-    body.slug = (form.slug && form.slug.trim()) ? form.slug.trim() : defaultSlug;
+    body.slug = form.slug && form.slug.trim() ? form.slug.trim() : defaultSlug;
     if (editing) body.id = editing.id;
-    const res = await fetch("/api/admin/blog", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/admin/blog", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
     const ok = res.ok;
     if (!ok) {
       const msg = await res.text();
@@ -234,10 +254,10 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     const f = e.target.files?.[0];
     if (!f) return;
     const prevUrl = form.cover_image_url?.trim();
-  const processed = await compressImageFile(f, { maxWidth: 1600, maxHeight: 1200, quality: 0.8 });
-  const fileForUpload = processed || f;
-  const fd = new FormData();
-  fd.append("file", fileForUpload);
+    const processed = await compressImageFile(f, { maxWidth: 1600, maxHeight: 1200, quality: 0.8 });
+    const fileForUpload = processed || f;
+    const fd = new FormData();
+    fd.append("file", fileForUpload);
     fd.append("folder", "covers");
     const res = await fetch("/api/admin/blog/upload", { method: "POST", body: fd });
     if (!res.ok) {
@@ -249,7 +269,9 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
     setForm((prev) => ({ ...prev, cover_image_url: url }));
 
     if (prevUrl && confirm("Delete the previous cover image from storage?")) {
-      await fetch(`/api/admin/blog/upload?url=${encodeURIComponent(prevUrl)}`, { method: "DELETE" });
+      await fetch(`/api/admin/blog/upload?url=${encodeURIComponent(prevUrl)}`, {
+        method: "DELETE",
+      });
     }
   };
 
@@ -278,7 +300,18 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
       return;
     }
     const updated = await res.json();
-    setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, published: updated.published, published_at: updated.published_at, updated_at: updated.updated_at } : p)));
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === post.id
+          ? {
+              ...p,
+              published: updated.published,
+              published_at: updated.published_at,
+              updated_at: updated.updated_at,
+            }
+          : p,
+      ),
+    );
   };
 
   return (
@@ -296,19 +329,32 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                   <div className="font-semibold">{p.title}</div>
                   <div className="text-xs text-gray-500">/{p.slug}</div>
                 </div>
-                <Badge variant={p.published ? "default" : "secondary"}>{p.published ? "Published" : "Draft"}</Badge>
+                <Badge variant={p.published ? "default" : "secondary"}>
+                  {p.published ? "Published" : "Draft"}
+                </Badge>
               </div>
               <p className="text-sm text-gray-600 mt-2 line-clamp-3">{p.excerpt}</p>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={() => openEdit(p.id)}>Edit</Button>
-                <Button size="sm" onClick={() => togglePublish(p)}>{p.published ? "Unpublish" : "Publish"}</Button>
-                <Button variant="destructive" size="sm" onClick={() => del(p.id)}>Delete</Button>
+                <Button variant="outline" size="sm" onClick={() => openEdit(p.id)}>
+                  Edit
+                </Button>
+                <Button size="sm" onClick={() => togglePublish(p)}>
+                  {p.published ? "Unpublish" : "Publish"}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => del(p.id)}>
+                  Delete
+                </Button>
               </div>
             </div>
           ))}
         </div>
         <div className="pt-4">
-          <LoadMoreBar hasMore={posts.length > visible} remaining={Math.max(0, posts.length - visible)} size={PAGE_SIZE} onLoadMore={() => setVisible((v)=> v + PAGE_SIZE)} />
+          <LoadMoreBar
+            hasMore={posts.length > visible}
+            remaining={Math.max(0, posts.length - visible)}
+            size={PAGE_SIZE}
+            onLoadMore={() => setVisible((v) => v + PAGE_SIZE)}
+          />
         </div>
       </CardContent>
 
@@ -319,7 +365,9 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
           </DialogHeader>
           <div className="grid gap-4 px-4 sm:px-0 pb-4">
             <div className="grid gap-2">
-              <label className="text-sm">Title <span className="text-red-600">*</span></label>
+              <label className="text-sm">
+                Title <span className="text-red-600">*</span>
+              </label>
               <Input
                 required
                 aria-required
@@ -332,8 +380,13 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                   setForm((prev) => {
                     const nextAuto = slugify(newTitle || "");
                     const prevAuto = slugify(prev.title || "");
-                    const shouldAutofill = !slugTouched || prev.slug.trim() === "" || prev.slug === prevAuto;
-                    return { ...prev, title: newTitle, slug: shouldAutofill ? nextAuto : prev.slug };
+                    const shouldAutofill =
+                      !slugTouched || prev.slug.trim() === "" || prev.slug === prevAuto;
+                    return {
+                      ...prev,
+                      title: newTitle,
+                      slug: shouldAutofill ? nextAuto : prev.slug,
+                    };
                   });
                 }}
               />
@@ -350,7 +403,9 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
               />
             </div>
             <div className="grid gap-2">
-              <label className="text-sm">Excerpt <span className="text-red-600">*</span></label>
+              <label className="text-sm">
+                Excerpt <span className="text-red-600">*</span>
+              </label>
               <Input
                 required
                 aria-required
@@ -365,31 +420,164 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
             </div>
             <div className="grid gap-2">
               <label className="text-sm">Cover Image URL</label>
-              <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} />
+              <Input
+                value={form.cover_image_url}
+                onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })}
+              />
               <div className="flex items-center gap-3">
-                <label htmlFor="coverFile" className="text-sm">Upload image</label>
+                <label htmlFor="coverFile" className="text-sm">
+                  Upload image
+                </label>
                 <input id="coverFile" type="file" accept="image/*" onChange={onCoverFileChange} />
                 {form.cover_image_url && (
-                  <Button type="button" variant="outline" onClick={removeCoverImage}>Remove image</Button>
+                  <Button type="button" variant="outline" onClick={removeCoverImage}>
+                    Remove image
+                  </Button>
                 )}
               </div>
             </div>
             <div className="grid gap-2">
               <div className="sticky top-0 z-20 px-4 sm:px-0 py-2 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
                 <div className="flex min-w-0 flex-wrap items-center gap-1 w-full">
-                  <Button title="Bold" aria-label="Bold" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("bold"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><b>B</b></Button>
-                  <Button title="Italic" aria-label="Italic" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("italic"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><i>I</i></Button>
-                  <Button title="Underline" aria-label="Underline" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("underline"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}><u>U</u></Button>
-                  <Button title="Bulleted list" aria-label="Bulleted list" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("insertUnorderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>•<span className="hidden sm:inline"> List</span></Button>
-                  <Button title="Numbered list" aria-label="Numbered list" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("insertOrderedList"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>1.<span className="hidden sm:inline"> List</span></Button>
-                  <Button title="Heading 1" aria-label="Heading 1" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h1"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H1</Button>
-                  <Button title="Heading 2" aria-label="Heading 2" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h2"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H2</Button>
-                  <Button title="Heading 3" aria-label="Heading 3" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "h3"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>H3</Button>
-                  <Button title="Paragraph" aria-label="Paragraph" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("formatBlock", false, "p"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>P<span className="hidden sm:inline">aragraph</span></Button>
+                  <Button
+                    title="Bold"
+                    aria-label="Bold"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("bold");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    <b>B</b>
+                  </Button>
+                  <Button
+                    title="Italic"
+                    aria-label="Italic"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("italic");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    <i>I</i>
+                  </Button>
+                  <Button
+                    title="Underline"
+                    aria-label="Underline"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("underline");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    <u>U</u>
+                  </Button>
+                  <Button
+                    title="Bulleted list"
+                    aria-label="Bulleted list"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("insertUnorderedList");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    •<span className="hidden sm:inline"> List</span>
+                  </Button>
+                  <Button
+                    title="Numbered list"
+                    aria-label="Numbered list"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("insertOrderedList");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    1.<span className="hidden sm:inline"> List</span>
+                  </Button>
+                  <Button
+                    title="Heading 1"
+                    aria-label="Heading 1"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("formatBlock", false, "h1");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    H1
+                  </Button>
+                  <Button
+                    title="Heading 2"
+                    aria-label="Heading 2"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("formatBlock", false, "h2");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    H2
+                  </Button>
+                  <Button
+                    title="Heading 3"
+                    aria-label="Heading 3"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("formatBlock", false, "h3");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    H3
+                  </Button>
+                  <Button
+                    title="Paragraph"
+                    aria-label="Paragraph"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("formatBlock", false, "p");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    P<span className="hidden sm:inline">aragraph</span>
+                  </Button>
                   <Popover
                     modal
                     open={linkOpen}
-                    onOpenChange={(o)=>{
+                    onOpenChange={(o) => {
                       setLinkOpen(o);
                       if (o) {
                         const a = getSelectedAnchor();
@@ -433,27 +621,113 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                         linkInputRef.current?.focus();
                       }}
                     >
-                      <Input ref={linkInputRef} className="w-full" autoFocus placeholder="https://example.com" value={linkValue} onChange={(e)=>setLinkValue(e.target.value)} />
+                      <Input
+                        ref={linkInputRef}
+                        className="w-full"
+                        autoFocus
+                        placeholder="https://example.com"
+                        value={linkValue}
+                        onChange={(e) => setLinkValue(e.target.value)}
+                      />
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => { restoreSelection(); document.execCommand("unlink"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); setLinkOpen(false); }}>Remove</Button>
-                        <Button type="button" size="sm" onClick={() => { const url = linkValue ? normalizeHref(linkValue) : ""; restoreSelection(); if (url) document.execCommand("createLink", false, url); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); setLinkOpen(false); }}>Apply</Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            restoreSelection();
+                            document.execCommand("unlink");
+                            const el = editorRef.current;
+                            if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                            setLinkOpen(false);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            const url = linkValue ? normalizeHref(linkValue) : "";
+                            restoreSelection();
+                            if (url) document.execCommand("createLink", false, url);
+                            const el = editorRef.current;
+                            if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                            setLinkOpen(false);
+                          }}
+                        >
+                          Apply
+                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>
-                  <Button title="Undo" aria-label="Undo" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("undo"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>↶<span className="hidden sm:inline"> Undo</span></Button>
-                  <Button title="Redo" aria-label="Redo" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm" onClick={() => { restoreSelection(); document.execCommand("redo"); const el = editorRef.current; if (el) setForm((p)=>({...p, content_html: el.innerHTML})); }}>↷<span className="hidden sm:inline"> Redo</span></Button>
-                  <Button title="Hide keyboard" aria-label="Hide keyboard" type="button" variant="outline" className="h-9 px-2 sm:h-8 sm:px-2 text-sm sm:hidden" onClick={() => { editorRef.current?.blur(); }}>⌄<span className="hidden sm:inline"> Hide KB</span></Button>
+                  <Button
+                    title="Undo"
+                    aria-label="Undo"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("undo");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    ↶<span className="hidden sm:inline"> Undo</span>
+                  </Button>
+                  <Button
+                    title="Redo"
+                    aria-label="Redo"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm"
+                    onClick={() => {
+                      restoreSelection();
+                      document.execCommand("redo");
+                      const el = editorRef.current;
+                      if (el) setForm((p) => ({ ...p, content_html: el.innerHTML }));
+                    }}
+                  >
+                    ↷<span className="hidden sm:inline"> Redo</span>
+                  </Button>
+                  <Button
+                    title="Hide keyboard"
+                    aria-label="Hide keyboard"
+                    type="button"
+                    variant="outline"
+                    className="h-9 px-2 sm:h-8 sm:px-2 text-sm sm:hidden"
+                    onClick={() => {
+                      editorRef.current?.blur();
+                    }}
+                  >
+                    ⌄<span className="hidden sm:inline"> Hide KB</span>
+                  </Button>
                   <div className="ml-0 sm:ml-auto basis-full sm:basis-auto flex justify-end gap-2 text-xs">
-                    <Button type="button" size="sm" variant={mode === "edit" ? "default" : "outline"} onClick={() => setMode("edit")}>Edit</Button>
-                    <Button type="button" size="sm" variant={mode === "preview" ? "default" : "outline"} onClick={() => setMode("preview")}>Preview</Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={mode === "edit" ? "default" : "outline"}
+                      onClick={() => setMode("edit")}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={mode === "preview" ? "default" : "outline"}
+                      onClick={() => setMode("preview")}
+                    >
+                      Preview
+                    </Button>
                   </div>
                 </div>
               </div>
-        {mode === "edit" ? (
-        <div
+              {mode === "edit" ? (
+                <div
                   key={editing ? editing.id : "new"}
                   ref={editorRef}
-          className={`min-h-56 sm:min-h-64 border rounded-md p-3 bg-white focus:outline-none prose prose-sm max-w-none [overflow-wrap:anywhere] hyphens-auto overflow-x-hidden prose-a:text-blue-600 hover:prose-a:text-blue-700 [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto ${errors.content ? "ring-1 ring-red-500" : ""}`}
+                  className={`min-h-56 sm:min-h-64 border rounded-md p-3 bg-white focus:outline-none prose prose-sm max-w-none [overflow-wrap:anywhere] hyphens-auto overflow-x-hidden prose-a:text-blue-600 hover:prose-a:text-blue-700 [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto ${errors.content ? "ring-1 ring-red-500" : ""}`}
                   contentEditable
                   suppressContentEditableWarning
                   role="textbox"
@@ -464,12 +738,13 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                   autoCorrect="on"
                   onInput={(e) => {
                     if (errors.content) setErrors((prev) => ({ ...prev, content: false }));
-          const html = (e.currentTarget as HTMLDivElement).innerHTML;
-          setForm((prev) => ({ ...prev, content_html: html }));
+                    const html = (e.currentTarget as HTMLDivElement).innerHTML;
+                    setForm((prev) => ({ ...prev, content_html: html }));
                   }}
                   onPaste={(e) => {
                     e.preventDefault();
-                    const html = e.clipboardData.getData("text/html") || e.clipboardData.getData("text/plain");
+                    const html =
+                      e.clipboardData.getData("text/html") || e.clipboardData.getData("text/plain");
                     const sanitized = sanitizeHtml(html, sanitizeCfg as any);
                     restoreSelection();
                     document.execCommand("insertHTML", false, sanitized);
@@ -484,10 +759,19 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={form.cover_image_url} alt="cover" className="w-full rounded mb-4" />
                   )}
-                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.content_html || "<p class=\"text-gray-500\">Nothing to preview</p>", sanitizeCfg as any) }} />
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeHtml(
+                        form.content_html || '<p class="text-gray-500">Nothing to preview</p>',
+                        sanitizeCfg as any,
+                      ),
+                    }}
+                  />
                 </div>
               )}
-              <p className="text-xs text-gray-500">Tip: Use the toolbar or keyboard shortcuts (Cmd/Ctrl+B/I/U).</p>
+              <p className="text-xs text-gray-500">
+                Tip: Use the toolbar or keyboard shortcuts (Cmd/Ctrl+B/I/U).
+              </p>
             </div>
             <div className="grid gap-2">
               <label className="text-sm">Status</label>
@@ -509,10 +793,14 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
                   Publish
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">Published posts are visible to everyone on the Blog page.</p>
+              <p className="text-xs text-gray-500">
+                Published posts are visible to everyone on the Blog page.
+              </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={save}>Save</Button>
             </div>
           </div>
@@ -522,23 +810,28 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
   );
 }
 
-async function compressImageFile(file: File, opts: { maxWidth: number; maxHeight: number; quality: number }) {
+async function compressImageFile(
+  file: File,
+  opts: { maxWidth: number; maxHeight: number; quality: number },
+) {
   try {
     const img = await loadImage(file);
     const ratio = Math.min(opts.maxWidth / img.width, opts.maxHeight / img.height, 1);
     const targetW = Math.max(1, Math.round(img.width * ratio));
     const targetH = Math.max(1, Math.round(img.height * ratio));
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = targetW;
     canvas.height = targetH;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, targetW, targetH);
-    const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', opts.quality));
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/webp", opts.quality),
+    );
     if (!blob) return null;
-    const base = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
-    return new File([blob], `${base}.webp`, { type: 'image/webp' });
+    const base = (file.name || "image").replace(/\.[^.]+$/, "") || "image";
+    return new File([blob], `${base}.webp`, { type: "image/webp" });
   } catch {
     return null;
   }
@@ -547,7 +840,7 @@ async function compressImageFile(file: File, opts: { maxWidth: number; maxHeight
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('read error'));
+    reader.onerror = () => reject(new Error("read error"));
     reader.onload = () => {
       const img = new Image();
       img.onload = () => resolve(img);

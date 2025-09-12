@@ -20,63 +20,71 @@ export default function OverdueAnalysis({ rentals, overdueRentals }: OverdueAnal
   const now = new Date();
 
   // Calculate overdue patterns
-  const overduePatterns = overdueRentals.map(rental => {
-    const dueDate = rental.due_date ? new Date(rental.due_date) : null;
-    const daysPastDue = dueDate ? Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    
-    return {
-      ...rental,
-      daysPastDue
-    };
-  }).sort((a, b) => b.daysPastDue - a.daysPastDue);
+  const overduePatterns = overdueRentals
+    .map((rental) => {
+      const dueDate = rental.due_date ? new Date(rental.due_date) : null;
+      const daysPastDue = dueDate
+        ? Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      return {
+        ...rental,
+        daysPastDue,
+      };
+    })
+    .sort((a, b) => b.daysPastDue - a.daysPastDue);
 
   // Group overdue items by severity
-  const severelyOverdue = overduePatterns.filter(r => r.daysPastDue > 14); // More than 2 weeks
-  const moderatelyOverdue = overduePatterns.filter(r => r.daysPastDue > 7 && r.daysPastDue <= 14); // 1-2 weeks
-  const recentlyOverdue = overduePatterns.filter(r => r.daysPastDue <= 7); // Within a week
+  const severelyOverdue = overduePatterns.filter((r) => r.daysPastDue > 14); // More than 2 weeks
+  const moderatelyOverdue = overduePatterns.filter((r) => r.daysPastDue > 7 && r.daysPastDue <= 14); // 1-2 weeks
+  const recentlyOverdue = overduePatterns.filter((r) => r.daysPastDue <= 7); // Within a week
 
   // Calculate overdue rate over time (last 6 months)
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push({
-      month: date.toLocaleDateString('en-US', { month: 'short' }),
-      fullDate: date
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      fullDate: date,
     });
   }
 
   const monthlyOverdueData = months.map(({ month, fullDate }) => {
     const nextMonth = new Date(fullDate.getFullYear(), fullDate.getMonth() + 1, 1);
-    
+
     // Rentals that became overdue in this month
-    const monthlyOverdue = rentals.filter(rental => {
+    const monthlyOverdue = rentals.filter((rental) => {
       if (!rental.due_date) return false;
       const dueDate = new Date(rental.due_date);
       return dueDate >= fullDate && dueDate < nextMonth && dueDate < now && !rental.returned;
     });
 
     // Total rentals in this month
-    const monthlyRentals = rentals.filter(rental => {
+    const monthlyRentals = rentals.filter((rental) => {
       const lentDate = new Date(rental.lent_date);
       return lentDate >= fullDate && lentDate < nextMonth;
     });
 
-    const overdueRate = monthlyRentals.length > 0 
-      ? Math.round((monthlyOverdue.length / monthlyRentals.length) * 100) 
-      : 0;
+    const overdueRate =
+      monthlyRentals.length > 0
+        ? Math.round((monthlyOverdue.length / monthlyRentals.length) * 100)
+        : 0;
 
     return {
       month,
       overdueCount: monthlyOverdue.length,
       totalRentals: monthlyRentals.length,
-      overdueRate
+      overdueRate,
     };
   });
 
-  const maxOverdueCount = Math.max(...monthlyOverdueData.map(d => d.overdueCount), 1);
-  const averageOverdueRate = monthlyOverdueData.length > 0
-    ? Math.round(monthlyOverdueData.reduce((acc, d) => acc + d.overdueRate, 0) / monthlyOverdueData.length)
-    : 0;
+  const maxOverdueCount = Math.max(...monthlyOverdueData.map((d) => d.overdueCount), 1);
+  const averageOverdueRate =
+    monthlyOverdueData.length > 0
+      ? Math.round(
+          monthlyOverdueData.reduce((acc, d) => acc + d.overdueRate, 0) / monthlyOverdueData.length,
+        )
+      : 0;
 
   return (
     <Card>
@@ -125,7 +133,7 @@ export default function OverdueAnalysis({ rentals, overdueRentals }: OverdueAnal
                 </div>
                 <div className="relative">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-red-500 h-3 rounded-full"
                       style={{ width: `${(data.overdueCount / maxOverdueCount) * 100}%` }}
                     ></div>
@@ -144,7 +152,10 @@ export default function OverdueAnalysis({ rentals, overdueRentals }: OverdueAnal
               </h4>
               <div className="space-y-3">
                 {overduePatterns.slice(0, 5).map((rental, index) => (
-                  <div key={rental.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <div
+                    key={rental.id}
+                    className="flex items-center justify-between p-3 bg-red-50 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                         <span className="text-sm font-bold text-red-600">#{index + 1}</span>
@@ -152,7 +163,8 @@ export default function OverdueAnalysis({ rentals, overdueRentals }: OverdueAnal
                       <div>
                         <p className="font-medium">Gear ID: {rental.gear_id}</p>
                         <p className="text-sm text-gray-600">
-                          Due: {rental.due_date ? new Date(rental.due_date).toLocaleDateString() : 'N/A'}
+                          Due:{" "}
+                          {rental.due_date ? new Date(rental.due_date).toLocaleDateString() : "N/A"}
                         </p>
                       </div>
                     </div>

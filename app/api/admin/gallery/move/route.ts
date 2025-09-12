@@ -4,14 +4,20 @@ import { supabaseService } from "@/utils/supabase/service";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
   const { data: membership } = await supabase
     .from("Membership")
     .select("admin")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!membership?.admin) return { error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) } as const;
+  if (!membership?.admin)
+    return {
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    } as const;
   return { user } as const;
 }
 
@@ -23,10 +29,13 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || "").trim();
-  const target_group_id: string | null = (body.target_group_id === null || body.target_group_id === undefined)
-    ? null
-    : String(body.target_group_id).trim();
-  let target_index: number | undefined = Number.isFinite(body.target_index) ? Number(body.target_index) : undefined;
+  const target_group_id: string | null =
+    body.target_group_id === null || body.target_group_id === undefined
+      ? null
+      : String(body.target_group_id).trim();
+  let target_index: number | undefined = Number.isFinite(body.target_index)
+    ? Number(body.target_index)
+    : undefined;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   // Load the image to determine source group
@@ -40,7 +49,7 @@ export async function POST(req: Request) {
 
   const source_group_id = img.group_id as string | null;
   const sameGroup = (source_group_id || null) === (target_group_id || null);
-  
+
   // If moving within same group with no specific target index, nothing to do here; client should use reorder API
   if (sameGroup && target_index === undefined) return NextResponse.json({ success: true });
 
@@ -80,7 +89,7 @@ export async function POST(req: Request) {
       .eq("group_id", target_group_id)
       .order("sequence", { ascending: true, nullsFirst: true });
     if (tgtErr) return NextResponse.json({ error: tgtErr.message }, { status: 400 });
-    const list = (tgt || []).map(r => r.id);
+    const list = (tgt || []).map((r) => r.id);
     const insertAt = Math.max(0, Math.min(target_index ?? list.length, list.length));
     list.splice(insertAt, 0, id);
     // Update moved image group

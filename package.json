@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "format": "prettier --cache --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.8",

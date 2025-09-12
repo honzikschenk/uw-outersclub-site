@@ -11,14 +11,22 @@ type LoadMoreBarProps = {
   size?: number; // how many will be loaded on next click (for label)
 };
 
-export function LoadMoreBar({ hasMore, onLoadMore, remaining, sticky = false, className = "", size }: LoadMoreBarProps) {
+export function LoadMoreBar({
+  hasMore,
+  onLoadMore,
+  remaining,
+  sticky = false,
+  className = "",
+  size,
+}: LoadMoreBarProps) {
   if (!hasMore) return null;
 
-  const label = typeof remaining === "number"
-    ? remaining > 0
-      ? `Load ${size ? Math.min(size, remaining) : "more"} (${remaining} left)`
-      : "Load more"
-    : "Load more";
+  const label =
+    typeof remaining === "number"
+      ? remaining > 0
+        ? `Load ${size ? Math.min(size, remaining) : "more"} (${remaining} left)`
+        : "Load more"
+      : "Load more";
 
   return (
     <div

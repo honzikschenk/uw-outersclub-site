@@ -4,14 +4,20 @@ import { supabaseService } from "@/utils/supabase/service";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
   const { data: membership } = await supabase
     .from("Membership")
     .select("admin")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!membership?.admin) return { error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) } as const;
+  if (!membership?.admin)
+    return {
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    } as const;
   return { user } as const;
 }
 
@@ -39,9 +45,9 @@ export async function POST(req: Request) {
 
   // Ensure bucket exists (public for direct access)
   try {
-    const { data: bucketInfo } = await supabaseService.storage.getBucket('gallery-images');
+    const { data: bucketInfo } = await supabaseService.storage.getBucket("gallery-images");
     if (!bucketInfo) {
-      await supabaseService.storage.createBucket('gallery-images', { public: true });
+      await supabaseService.storage.createBucket("gallery-images", { public: true });
     }
   } catch {
     // Ignore; upload below will surface any real errors
@@ -59,7 +65,7 @@ export async function POST(req: Request) {
       // Use sharp if available in the runtime; fallback to reject if not
       // We intentionally avoid adding a dependency; this block will be skipped if sharp is not present
       // @ts-ignore
-      const sharp = (await import('sharp')).default as any;
+      const sharp = (await import("sharp")).default as any;
       if (sharp) {
         const input = Buffer.from(arrayBuffer);
         const img = sharp(input, { limitInputPixels: 268402689 });
@@ -73,15 +79,14 @@ export async function POST(req: Request) {
         const targetH = Math.max(1, Math.floor(height * ratio));
         const out = await img.resize(targetW, targetH).webp({ quality: 75 }).toBuffer();
         arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
-        contentType = 'image/webp';
+        contentType = "image/webp";
       }
     } catch {
       // ignore; will try raw upload below
     }
   }
 
-  const { error: upErr } = await supabaseService
-    .storage
+  const { error: upErr } = await supabaseService.storage
     .from("gallery-images")
     .upload(path, arrayBuffer, { contentType, upsert: false, cacheControl: "31536000" });
 

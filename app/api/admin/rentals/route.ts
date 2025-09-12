@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     for (const edited of editedRows) {
       const original = originalRows.find((row: any) => row.id === edited.id);
       if (!original) continue;
-      
+
       // Only update if something changed
       const changedFields: Record<string, any> = {};
       for (const key of Object.keys(edited)) {
@@ -20,13 +20,10 @@ export async function POST(request: Request) {
           changedFields[key] = edited[key];
         }
       }
-      
+
       if (Object.keys(changedFields).length > 0) {
-        const { error } = await supabase
-          .from("Lent")
-          .update(changedFields)
-          .eq("id", edited.id);
-        
+        const { error } = await supabase.from("Lent").update(changedFields).eq("id", edited.id);
+
         if (error) errors.push(`Update failed for rental id ${edited.id}: ${error.message}`);
       }
     }
@@ -43,6 +40,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message || "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err?.message || "Unknown error" },
+      { status: 500 },
+    );
   }
 }

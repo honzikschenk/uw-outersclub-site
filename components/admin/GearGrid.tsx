@@ -6,17 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import LoadMoreBar from "@/components/ui/load-more-bar";
 import GearEditModal from "./GearEditModal";
-import { 
-  Search, 
-  Filter, 
-  ChevronDown, 
-  Edit, 
+import {
+  Search,
+  Filter,
+  ChevronDown,
+  Edit,
   MoreHorizontal,
   CheckCircle,
   XCircle,
   Package,
   Save,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,28 +51,28 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const PAGE_SIZE = 24;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  
+
   // Change tracking state for batch operations
   const [originalRows, setOriginalRows] = useState<GearItem[]>(gear || []);
   const [editedRows, setEditedRows] = useState<GearItem[]>(gear || []);
   const [editedRowIndices, setEditedRowIndices] = useState<Set<number>>(new Set());
   const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
 
-  const categories = Array.from(new Set(gear.map(g => g.category))).filter(Boolean);
+  const categories = Array.from(new Set(gear.map((g) => g.category))).filter(Boolean);
 
   useEffect(() => {
     setOriginalRows(gear || []);
     setEditedRows(gear || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
-  setVisibleCount(PAGE_SIZE);
+    setVisibleCount(PAGE_SIZE);
   }, [gear]);
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [searchTerm, filterCategory, filterStatus]);
 
   const handleDelete = (gearId: number) => {
-    const rowIndex = editedRows.findIndex(item => item.id === gearId);
+    const rowIndex = editedRows.findIndex((item) => item.id === gearId);
     if (rowIndex === -1) return;
 
     setDeletedRows((prev) => {
@@ -87,7 +87,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
   };
 
   const handleGearEdit = (gearId: number) => {
-    const gearItem = editedRows.find(g => g.id === gearId);
+    const gearItem = editedRows.find((g) => g.id === gearId);
     if (gearItem) {
       setSelectedGear(gearItem);
       setIsEditModalOpen(true);
@@ -96,13 +96,11 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
 
   const handleSaveGear = (updatedGear: GearItem) => {
     // Update the edited rows with the new gear data
-    const gearIndex = editedRows.findIndex(g => g.id === updatedGear.id);
+    const gearIndex = editedRows.findIndex((g) => g.id === updatedGear.id);
     if (gearIndex !== -1) {
-      const updated = editedRows.map((row, idx) =>
-        idx === gearIndex ? updatedGear : row
-      );
+      const updated = editedRows.map((row, idx) => (idx === gearIndex ? updatedGear : row));
       setEditedRows(updated);
-      
+
       // Check if this item was actually changed compared to original
       const original = originalRows[gearIndex];
       let isEdited = false;
@@ -114,8 +112,8 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
           }
         }
       }
-      
-      setEditedRowIndices(prev => {
+
+      setEditedRowIndices((prev) => {
         const newSet = new Set(prev);
         if (isEdited) {
           newSet.add(gearIndex);
@@ -164,7 +162,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
         .map(({ row }) => row);
 
       const deletedRowIds = Array.from(deletedRows)
-        .map(idx => originalRows[idx]?.id)
+        .map((idx) => originalRows[idx]?.id)
         .filter(Boolean);
 
       if (changedRows.length === 0 && deletedRowIds.length === 0) {
@@ -193,7 +191,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
       } else {
         const text = await res.text();
         throw new Error(
-          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`
+          `Server returned an invalid response.\nStatus: ${res.status}\n${text.slice(0, 200)}`,
         );
       }
 
@@ -218,14 +216,15 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
 
   // Filter gear
   const filteredGear = editedRows.filter((item) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesCategory = filterCategory === "all" || item.category === filterCategory;
-    
-    const matchesStatus = 
+
+    const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "available" && (item.num_available || 0) > 0) ||
       (filterStatus === "out_of_stock" && (item.num_available || 0) === 0);
@@ -246,7 +245,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
               <Package className="h-5 w-5" />
               Gear Inventory
             </CardTitle>
-            
+
             {hasChanges && (
               <Button onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700">
                 <Save className="h-4 w-4 mr-2" />
@@ -254,7 +253,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
               </Button>
             )}
           </div>
-          
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative">
@@ -266,7 +265,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                 className="pl-10 w-full sm:w-64"
               />
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -280,7 +279,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                   <DropdownMenuItem onClick={() => setFilterCategory("all")}>
                     All Categories
                   </DropdownMenuItem>
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <DropdownMenuItem key={category} onClick={() => setFilterCategory(category)}>
                       {category.charAt(0).toUpperCase() + category.slice(1)}
                     </DropdownMenuItem>
@@ -316,16 +315,19 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
         {/* Grid View - Works on all screen sizes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {pagedGear.map((item) => {
-            const originalIndex = editedRows.findIndex(r => r.id === item.id);
+            const originalIndex = editedRows.findIndex((r) => r.id === item.id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
-            
+
             return (
-              <Card 
-                key={item.id} 
+              <Card
+                key={item.id}
                 className={`hover:shadow-lg transition-all duration-200 group ${
-                  isDeleted ? 'bg-red-50 opacity-60 line-through' : 
-                  isEdited ? 'bg-yellow-50 border-yellow-200' : ''
+                  isDeleted
+                    ? "bg-red-50 opacity-60 line-through"
+                    : isEdited
+                      ? "bg-yellow-50 border-yellow-200"
+                      : ""
                 }`}
               >
                 <CardContent className="p-4">
@@ -341,7 +343,11 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -350,7 +356,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Item
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDelete(item.id)}
                           className={isDeleted ? "text-green-600" : "text-red-600"}
                         >
@@ -369,11 +375,15 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
                   <div className="mb-3">
-                    <Badge 
+                    <Badge
                       variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
-                      className={(item.num_available || 0) > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                      className={
+                        (item.num_available || 0) > 0
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }
                     >
                       <div className="flex items-center gap-1">
                         {(item.num_available || 0) > 0 ? (
@@ -381,11 +391,13 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                         ) : (
                           <XCircle className="h-3 w-3" />
                         )}
-                        {(item.num_available || 0) > 0 ? `${item.num_available} available` : "Out of stock"}
+                        {(item.num_available || 0) > 0
+                          ? `${item.num_available} available`
+                          : "Out of stock"}
                       </div>
                     </Badge>
                   </div>
-                  
+
                   {item.description && (
                     <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
                   )}
@@ -406,12 +418,18 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <div className="flex items-center gap-1">
                         {isEdited && (
-                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300"
+                          >
                             Modified
                           </Badge>
                         )}
                         {isDeleted && (
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-800 border-red-300">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-red-100 text-red-800 border-red-300"
+                          >
                             Marked for deletion
                           </Badge>
                         )}
@@ -423,7 +441,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
             );
           })}
         </div>
-        
+
         {filteredGear.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No gear items found matching your criteria.

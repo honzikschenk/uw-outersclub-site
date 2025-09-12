@@ -12,18 +12,14 @@ export default async function RentalsPage() {
   const [
     { data: allRentals, error: rentalsError },
     { data: gearData, error: gearError },
-    { data: userData, error: userError }
+    { data: userData, error: userError },
   ] = await Promise.all([
     supabase
       .from("Lent")
       .select("id, lent_date, due_date, gear_id, user_id, returned")
       .order("lent_date", { ascending: false }),
-    supabase
-      .from("Gear")
-      .select("id, name, category"),
-    supabase
-      .from("Membership")
-      .select("user_id, name")
+    supabase.from("Gear").select("id, name, category"),
+    supabase.from("Membership").select("user_id, name"),
   ]);
 
   if (rentalsError || gearError || userError) {
@@ -33,7 +29,8 @@ export default async function RentalsPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-red-600">
-              Error loading rental data: {rentalsError?.message || gearError?.message || userError?.message}
+              Error loading rental data:{" "}
+              {rentalsError?.message || gearError?.message || userError?.message}
             </p>
           </CardContent>
         </Card>
@@ -51,51 +48,48 @@ export default async function RentalsPage() {
 
   // Calculate rental statistics
   const now = new Date();
-  const activeRentals = rentals.filter(r => !r.returned);
-  const overdueRentals = activeRentals.filter(r => 
-    r.due_date && new Date(r.due_date) < now
-  );
-  const completedRentals = rentals.filter(r => r.returned);
-  
+  const activeRentals = rentals.filter((r) => !r.returned);
+  const overdueRentals = activeRentals.filter((r) => r.due_date && new Date(r.due_date) < now);
+  const completedRentals = rentals.filter((r) => r.returned);
+
   // Calculate recent activity (last 7 days)
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const recentRentals = rentals.filter(r => 
-    r.lent_date && new Date(r.lent_date) >= weekAgo
-  );
-  const recentReturns = rentals.filter(r => 
-    r.returned && r.lent_date && new Date(r.lent_date) >= weekAgo
+  const recentRentals = rentals.filter((r) => r.lent_date && new Date(r.lent_date) >= weekAgo);
+  const recentReturns = rentals.filter(
+    (r) => r.returned && r.lent_date && new Date(r.lent_date) >= weekAgo,
   );
 
   // Calculate average rental duration for completed rentals
-  const completedWithDates = completedRentals.filter(r => r.lent_date && r.due_date);
-  const avgDuration = completedWithDates.length > 0 
-    ? Math.round(
-        completedWithDates.reduce((acc, r) => {
-          const lent = new Date(r.lent_date);
-          const due = new Date(r.due_date);
-          return acc + (due.getTime() - lent.getTime()) / (1000 * 60 * 60 * 24);
-        }, 0) / completedWithDates.length
-      ) 
-    : 0;
+  const completedWithDates = completedRentals.filter((r) => r.lent_date && r.due_date);
+  const avgDuration =
+    completedWithDates.length > 0
+      ? Math.round(
+          completedWithDates.reduce((acc, r) => {
+            const lent = new Date(r.lent_date);
+            const due = new Date(r.due_date);
+            return acc + (due.getTime() - lent.getTime()) / (1000 * 60 * 60 * 24);
+          }, 0) / completedWithDates.length,
+        )
+      : 0;
 
   // Enhance rentals with gear and user info
-  const enhancedRentals = rentals.map(rental => {
-    let status: 'returned' | 'overdue' | 'active';
+  const enhancedRentals = rentals.map((rental) => {
+    let status: "returned" | "overdue" | "active";
     if (rental.returned) {
-      status = 'returned';
+      status = "returned";
     } else if (rental.due_date && new Date(rental.due_date) < now) {
-      status = 'overdue';
+      status = "overdue";
     } else {
-      status = 'active';
+      status = "active";
     }
 
     return {
       ...rental,
       gearName: gearMap[rental.gear_id]?.name || `Gear #${rental.gear_id}`,
-      gearCategory: gearMap[rental.gear_id]?.category || 'Unknown',
-      userName: userMap[rental.user_id]?.name || 'Unknown User',
-      status
+      gearCategory: gearMap[rental.gear_id]?.category || "Unknown",
+      userName: userMap[rental.user_id]?.name || "Unknown User",
+      status,
     };
   });
 

@@ -7,7 +7,9 @@ export default function ResourcesPage() {
     <main className="max-w-3xl mx-auto px-4 py-12 space-y-10">
       <div className="container mx-auto py-10">
         <nav className="mb-6 text-sm text-muted-foreground flex gap-2 items-center">
-          <Link href="/resources" className="hover:underline">Resources</Link>
+          <Link href="/resources" className="hover:underline">
+            Resources
+          </Link>
         </nav>
         <h1 className="text-4xl font-bold mb-8">Resources</h1>
         <section className="mb-10">
@@ -16,9 +18,7 @@ export default function ResourcesPage() {
               <CardTitle>Equipment Room Hours</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-medium">
-                Tuesdays & Thursdays: 6:30-7:30 pm
-              </div>
+              <div className="text-lg font-medium">Tuesdays & Thursdays: 6:30-7:30 pm</div>
             </CardContent>
           </Card>
         </section>
@@ -26,9 +26,7 @@ export default function ResourcesPage() {
           <Card className="mb-6 w-full md:w-[800px] mx-auto">
             <CardHeader>
               <CardTitle>Maps</CardTitle>
-              <CardDescription>
-                Access maps for trip planning and navigation.
-              </CardDescription>
+              <CardDescription>Access maps for trip planning and navigation.</CardDescription>
             </CardHeader>
             <CardContent>
               <div>

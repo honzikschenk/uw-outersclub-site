@@ -1,44 +1,50 @@
-import { createClient } from '@/utils/supabase/server'
-import { Button } from '@/components/ui/button'
-import Image from 'next/image'
-import Link from 'next/link'
-import ProductReservationClient from './ProductReservationClient'
+import { createClient } from "@/utils/supabase/server";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import Link from "next/link";
+import ProductReservationClient from "./ProductReservationClient";
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ category: string, product: string }>;
+  params: Promise<{ category: string; product: string }>;
 }) {
-  const { category: rawCategory, product } = await params
-  const category = decodeURIComponent(rawCategory)
+  const { category: rawCategory, product } = await params;
+  const category = decodeURIComponent(rawCategory);
 
-  const supabase = await createClient()
+  const supabase = await createClient();
   // Fetch product details
   const { data: items, error } = await supabase
-    .from('Gear')
-    .select('*')
-    .eq('category', category)
-    .eq('id', product)
-    .limit(1)
+    .from("Gear")
+    .select("*")
+    .eq("category", category)
+    .eq("id", product)
+    .limit(1);
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (error) {
-    return <div className="p-8 text-red-600">Error loading product: {error.message}</div>
+    return <div className="p-8 text-red-600">Error loading product: {error.message}</div>;
   }
 
-  const item = items && items.length > 0 ? items[0] : null
+  const item = items && items.length > 0 ? items[0] : null;
 
   if (!item) {
-    return <div className="p-8 text-muted-foreground">Product not found.</div>
+    return <div className="p-8 text-muted-foreground">Product not found.</div>;
   }
 
   return (
     <div className="container mx-auto py-4 px-4 sm:py-10 sm:px-6 lg:px-8">
       <nav className="mb-4 sm:mb-6 text-sm text-muted-foreground flex gap-2 items-center">
-        <Link href="/gear" className="hover:underline">Gear Categories</Link>
+        <Link href="/gear" className="hover:underline">
+          Gear Categories
+        </Link>
         <span>/</span>
-        <Link href={`/gear/${encodeURIComponent(category)}`} className="hover:underline capitalize">{category}</Link>
+        <Link href={`/gear/${encodeURIComponent(category)}`} className="hover:underline capitalize">
+          {category}
+        </Link>
         <span>/</span>
         <span>{item.name}</span>
       </nav>
@@ -48,7 +54,7 @@ export default async function Page({
             src={item.image_url}
             alt={item.name}
             fill
-            style={{ objectFit: 'cover' }}
+            style={{ objectFit: "cover" }}
             className="w-full h-full object-cover"
             priority
           />
@@ -64,14 +70,24 @@ export default async function Page({
         </div>
         <div className="flex flex-col gap-2 mb-4 sm:mb-6">
           <span className="text-lg sm:text-xl font-semibold text-primary">Rental Prices:</span>
-          <span className="text-sm sm:text-base text-gray-700">Tuesday–Thursday: ${item.price_tu_th ?? 'N/A'}</span>
-          <span className="text-sm sm:text-base text-gray-700">Thursday–Tuesday: ${item.price_th_tu ?? 'N/A'}</span>
-          <span className="text-sm sm:text-base text-gray-700">Full Week: ${item.price_week ?? 'N/A'}</span>
-          <span className="text-sm sm:text-base text-gray-700">Extended Periods: Stacked weekly rates + extra days</span>
-          <span className="text-sm sm:text-base text-gray-500">Available: {item.num_available ?? 'N/A'}</span>
+          <span className="text-sm sm:text-base text-gray-700">
+            Tuesday–Thursday: ${item.price_tu_th ?? "N/A"}
+          </span>
+          <span className="text-sm sm:text-base text-gray-700">
+            Thursday–Tuesday: ${item.price_th_tu ?? "N/A"}
+          </span>
+          <span className="text-sm sm:text-base text-gray-700">
+            Full Week: ${item.price_week ?? "N/A"}
+          </span>
+          <span className="text-sm sm:text-base text-gray-700">
+            Extended Periods: Stacked weekly rates + extra days
+          </span>
+          <span className="text-sm sm:text-base text-gray-500">
+            Available: {item.num_available ?? "N/A"}
+          </span>
         </div>
         <ProductReservationClient user={user} item={item} />
       </div>
     </div>
-  )
+  );
 }

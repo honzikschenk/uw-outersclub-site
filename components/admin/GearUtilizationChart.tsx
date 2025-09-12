@@ -12,8 +12,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
-} from 'recharts';
+  Legend,
+} from "recharts";
 
 interface GearUtilization {
   id: number;
@@ -36,11 +36,11 @@ interface GearUtilizationChartProps {
 }
 
 export default function GearUtilizationChart({ gearUtilization }: GearUtilizationChartProps) {
-  const maxScore = Math.max(...gearUtilization.map(g => g.utilizationScore), 1);
+  const maxScore = Math.max(...gearUtilization.map((g) => g.utilizationScore), 1);
 
   const colors = [
     "#3b82f6",
-    "#10b981", 
+    "#10b981",
     "#8b5cf6",
     "#f59e0b",
     "#ef4444",
@@ -48,19 +48,19 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
     "#ec4899",
     "#6366f1",
     "#14b8a6",
-    "#6b7280"
+    "#6b7280",
   ];
 
   // Prepare data for charts
   const chartData = gearUtilization.map((item, index) => ({
-    name: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name,
+    name: item.name.length > 15 ? item.name.substring(0, 15) + "..." : item.name,
     fullName: item.name,
     category: item.category,
     totalRentals: item.totalRentals,
     currentlyRented: item.currentlyRented,
     available: item.num_available || 0,
     utilizationScore: item.utilizationScore,
-    fill: colors[index % colors.length]
+    fill: colors[index % colors.length],
   }));
 
   return (
@@ -97,13 +97,8 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      type="number"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
+                    <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis
                       type="category"
                       dataKey="name"
                       fontSize={11}
@@ -111,7 +106,7 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
                       axisLine={false}
                       width={120}
                     />
-                    <Tooltip 
+                    <Tooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
@@ -125,20 +120,14 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
                               <p className="text-orange-600">
                                 {`Currently Rented: ${data.currentlyRented}`}
                               </p>
-                              <p className="text-green-600">
-                                {`Available: ${data.available}`}
-                              </p>
+                              <p className="text-green-600">{`Available: ${data.available}`}</p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar 
-                      dataKey="totalRentals" 
-                      fill="#3b82f6"
-                      radius={[0, 4, 4, 0]}
-                    />
+                    <Bar dataKey="totalRentals" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

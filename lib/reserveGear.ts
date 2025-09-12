@@ -11,7 +11,9 @@ export async function reserveCartItems({
 }) {
   const supabase = supabaseService;
 
-  console.log(`[reserveCartItems] Starting reservation for user ${userId} with ${cartItems.length} items`);
+  console.log(
+    `[reserveCartItems] Starting reservation for user ${userId} with ${cartItems.length} items`,
+  );
 
   if (!cartItems || cartItems.length === 0) {
     return { error: "No items to reserve." };
@@ -28,15 +30,17 @@ export async function reserveCartItems({
     return { error: "Could not check membership status. Database error." };
   }
   if (!memberships) {
-    return { error: "No membership record found. Please contact an admin to set up your membership." };
+    return {
+      error: "No membership record found. Please contact an admin to set up your membership.",
+    };
   }
   // Note: We allow rentals to proceed even if membership is not valid
   // The user will be warned at pickup time about membership requirements
 
   // 2. Check for duplicate items in the current cart
-  const gearIdsInCart = cartItems.map(item => item.id);
+  const gearIdsInCart = cartItems.map((item) => item.id);
   const uniqueGearIds = new Set(gearIdsInCart);
-  
+
   if (gearIdsInCart.length !== uniqueGearIds.size) {
     return {
       error: "You cannot rent the same item multiple times in one reservation.",

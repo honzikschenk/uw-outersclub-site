@@ -4,14 +4,20 @@ import { supabaseService } from "@/utils/supabase/service";
 
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
   const { data: membership } = await supabase
     .from("Membership")
     .select("admin")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!membership?.admin) return { error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) } as const;
+  if (!membership?.admin)
+    return {
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    } as const;
   return { user } as const;
 }
 

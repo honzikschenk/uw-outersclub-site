@@ -3,13 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Sidebar } from "@/components/admin/Sidebar";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  
+
   // Check authentication
   const {
     data: { user },
@@ -33,9 +29,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 p-4 md:p-6 lg:p-8 pt-16 md:pt-4">
-        {children}
-      </main>
+      <main className="flex-1 p-4 md:p-6 lg:p-8 pt-16 md:pt-4">{children}</main>
     </div>
   );
 }

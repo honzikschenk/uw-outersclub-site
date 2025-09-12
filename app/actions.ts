@@ -15,11 +15,7 @@ export const signUpAction = async (formData: FormData) => {
   const origin = (await headers()).get("origin");
 
   if (!name || !email || !password) {
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "Name, email and password are required"
-    );
+    return encodedRedirect("error", "/sign-up", "Name, email and password are required");
   }
 
   // Validate UWaterloo email domain
@@ -27,7 +23,7 @@ export const signUpAction = async (formData: FormData) => {
     return encodedRedirect(
       "error",
       "/sign-up",
-      "Please use your UWaterloo email address (@uwaterloo.ca)"
+      "Please use your UWaterloo email address (@uwaterloo.ca)",
     );
   }
 
@@ -45,15 +41,13 @@ export const signUpAction = async (formData: FormData) => {
   } else {
     // Create Membership entry using service role client to bypass RLS
     if (data.user) {
-      const { error: membershipError } = await supabaseService
-        .from("Membership")
-        .insert({
-          user_id: data.user.id,
-          name: name,
-          joined_on: new Date().toISOString(),
-          valid: false,
-          admin: false,
-        });
+      const { error: membershipError } = await supabaseService.from("Membership").insert({
+        user_id: data.user.id,
+        name: name,
+        joined_on: new Date().toISOString(),
+        valid: false,
+        admin: false,
+      });
 
       if (membershipError) {
         console.error("Failed to create membership:", membershipError);
@@ -72,11 +66,11 @@ export const signUpAction = async (formData: FormData) => {
     if (signInError) {
       // If sign-in fails due to email confirmation requirement,
       // show a message but don't treat it as an error
-      if (signInError.message?.includes('email') || signInError.message?.includes('confirm')) {
+      if (signInError.message?.includes("email") || signInError.message?.includes("confirm")) {
         return encodedRedirect(
           "success",
           "/sign-up",
-          "Account created successfully! You can now sign in."
+          "Account created successfully! You can now sign in.",
         );
       }
       console.error(signInError.code + " " + signInError.message);
@@ -121,11 +115,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
 
   if (error) {
     console.error(error.message);
-    return encodedRedirect(
-      "error",
-      "/forgot-password",
-      "Could not reset password"
-    );
+    return encodedRedirect("error", "/forgot-password", "Could not reset password");
   }
 
   if (callbackUrl) {
@@ -135,7 +125,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
   return encodedRedirect(
     "success",
     "/forgot-password",
-    "Check your email for a link to reset your password."
+    "Check your email for a link to reset your password.",
   );
 };
 
@@ -149,16 +139,12 @@ export const resetPasswordAction = async (formData: FormData) => {
     encodedRedirect(
       "error",
       "/protected/reset-password",
-      "Password and confirm password are required"
+      "Password and confirm password are required",
     );
   }
 
   if (password !== confirmPassword) {
-    encodedRedirect(
-      "error",
-      "/protected/reset-password",
-      "Passwords do not match"
-    );
+    encodedRedirect("error", "/protected/reset-password", "Passwords do not match");
   }
 
   const { error } = await supabase.auth.updateUser({
@@ -166,11 +152,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    encodedRedirect(
-      "error",
-      "/protected/reset-password",
-      "Password update failed"
-    );
+    encodedRedirect("error", "/protected/reset-password", "Password update failed");
   }
 
   encodedRedirect("success", "/protected/reset-password", "Password updated");
@@ -184,7 +166,7 @@ export const signOutAction = async () => {
 
 export const cancelRentalAction = async (rentalId: string) => {
   const supabase = await createClient();
-  
+
   // Get the current user
   const {
     data: { user },
@@ -217,11 +199,15 @@ export const cancelRentalAction = async (rentalId: string) => {
   // Check if the rental has started (lent_date is in the past)
   const lentDate = new Date(rental.lent_date);
   const now = new Date();
-  
-  console.log(`[cancelRentalAction] Date check: lentDate=${lentDate.toISOString()}, now=${now.toISOString()}`);
-  
+
+  console.log(
+    `[cancelRentalAction] Date check: lentDate=${lentDate.toISOString()}, now=${now.toISOString()}`,
+  );
+
   if (lentDate <= now) {
-    return { error: "You cannot cancel a rental that has already started. Please return the item instead." };
+    return {
+      error: "You cannot cancel a rental that has already started. Please return the item instead.",
+    };
   }
 
   // Delete the rental (since it's a future reservation)
@@ -259,9 +245,12 @@ export const cancelRentalAction = async (rentalId: string) => {
           revenue_generated: Math.max(0, (gear.revenue_generated || 0) - (gear.price || 0)),
         })
         .eq("id", rental.gear_id);
-      
+
       if (updateError) {
-        console.warn(`[cancelRentalAction] Gear update failed but rental was canceled:`, updateError);
+        console.warn(
+          `[cancelRentalAction] Gear update failed but rental was canceled:`,
+          updateError,
+        );
       } else {
         console.log(`[cancelRentalAction] Gear update successful`);
       }
@@ -271,9 +260,9 @@ export const cancelRentalAction = async (rentalId: string) => {
   }
 
   console.log(`[cancelRentalAction] Successfully canceled rental ${rentalId}`);
-  
+
   // Revalidate the member page to refresh the data
   revalidatePath("/member");
-  
+
   return { success: true };
 };

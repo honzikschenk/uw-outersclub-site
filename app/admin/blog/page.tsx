@@ -4,7 +4,9 @@ import BlogAdminTable from "../../../components/admin/BlogAdminTable";
 
 export default async function AdminBlogPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return redirect("/sign-in");
   const { data: membership } = await supabase
     .from("Membership")

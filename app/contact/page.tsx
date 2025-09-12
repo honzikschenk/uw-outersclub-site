@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import Image from "next/image";
 
 export const metadata = {
   title: "Contact | UW Outers Club",
@@ -14,16 +14,38 @@ export default function Contact() {
       <section className="mb-10">
         <ul className="list-disc list-inside ml-6 space-y-2 text-lg">
           <li>
-            Email: <a className="text-green-600 underline" href="mailto:outersclub.uwaterloo@gmail.com">outersclub.uwaterloo@gmail.com</a>
+            Email:{" "}
+            <a className="text-green-600 underline" href="mailto:outersclub.uwaterloo@gmail.com">
+              outersclub.uwaterloo@gmail.com
+            </a>
           </li>
           <li>
-            In person during our <a className="text-green-600 underline" href="/resources">equipment room hours</a>
+            In person during our{" "}
+            <a className="text-green-600 underline" href="/resources">
+              equipment room hours
+            </a>
           </li>
           <li>
-            Join our Discord: <a className="text-green-600 underline" href="https://discord.com/invite/hPCUhxt7f7" target="_blank" rel="noopener noreferrer">UW Outers Club Discord</a>
+            Join our Discord:{" "}
+            <a
+              className="text-green-600 underline"
+              href="https://discord.com/invite/hPCUhxt7f7"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              UW Outers Club Discord
+            </a>
           </li>
           <li>
-            Our Instagram: <a className="text-green-600 underline" href="https://www.instagram.com/wloo.outersclub" target="_blank" rel="noopener noreferrer">@wloo.outersclub</a>
+            Our Instagram:{" "}
+            <a
+              className="text-green-600 underline"
+              href="https://www.instagram.com/wloo.outersclub"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @wloo.outersclub
+            </a>
           </li>
         </ul>
       </section>
@@ -32,7 +54,13 @@ export default function Contact() {
         <p className="mb-4 text-lg">We are located in PAC 2010 (west).</p>
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="w-full md:w-1/2 flex flex-col items-center">
-            <Image src="/room-map.png" alt="PAC 2010 map and location" width={800} height={500} className="rounded shadow border" />
+            <Image
+              src="/room-map.png"
+              alt="PAC 2010 map and location"
+              width={800}
+              height={500}
+              className="rounded shadow border"
+            />
             <span className="text-sm text-muted-foreground mt-2">Office location and map</span>
           </div>
           <div className="w-full md:w-1/2">
@@ -47,5 +75,5 @@ export default function Contact() {
         </div>
       </section>
     </div>
-  )
+  );
 }

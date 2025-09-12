@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     for (const edited of editedRows) {
       const original = originalRows.find((row: any) => row.user_id === edited.user_id);
       if (!original) continue;
-      
+
       // Only update if something changed
       const changedFields: Record<string, any> = {};
       for (const key of Object.keys(edited)) {
@@ -20,13 +20,13 @@ export async function POST(request: Request) {
           changedFields[key] = edited[key];
         }
       }
-      
+
       if (Object.keys(changedFields).length > 0) {
         const { error } = await supabase
           .from("Membership")
           .update(changedFields)
           .eq("user_id", edited.user_id);
-        
+
         if (error) errors.push(`Update failed for user ${edited.user_id}: ${error.message}`);
       }
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         .from("Membership")
         .update({ valid: false })
         .eq("user_id", userId);
-      
+
       if (error) errors.push(`Delete failed for user ${userId}: ${error.message}`);
     }
 
@@ -59,16 +59,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message || "Unknown error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err?.message || "Unknown error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request: Request) {
   try {
     const supabase = supabaseService;
-    
+
     // Check authentication and admin status
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -89,17 +95,20 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-    
+    const userId = searchParams.get("user_id");
+
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
     // Prevent deleting self
     if (userId === user.id) {
-      return NextResponse.json({ 
-        error: "Cannot delete your own membership" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Cannot delete your own membership",
+        },
+        { status: 400 },
+      );
     }
 
     // Check if user has active rentals
@@ -110,9 +119,12 @@ export async function DELETE(request: Request) {
       .eq("returned", false);
 
     if (activeRentals && activeRentals.length > 0) {
-      return NextResponse.json({ 
-        error: "Cannot delete user with active rentals" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Cannot delete user with active rentals",
+        },
+        { status: 400 },
+      );
     }
 
     // Invalidate membership instead of deleting
@@ -127,7 +139,6 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-    
   } catch (error) {
     console.error("User delete error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

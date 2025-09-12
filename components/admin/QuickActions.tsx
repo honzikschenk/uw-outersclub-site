@@ -37,15 +37,15 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
     // Create empty gear template for new item
     const newGear = {
       id: Date.now(), // Temporary ID
-      name: '',
-      category: '',
+      name: "",
+      category: "",
       num_available: 0,
-      description: '',
+      description: "",
       price_tu_th: null,
       price_th_tu: null,
       price_week: null,
       total_times_rented: 0,
-      revenue_generated: 0
+      revenue_generated: 0,
     };
     setSelectedGear(newGear);
     setIsGearModalOpen(true);
@@ -54,11 +54,11 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
   const handleAddNewUser = () => {
     // Create empty user template for new member
     const newUser = {
-      user_id: '',
-      name: '',
+      user_id: "",
+      name: "",
       joined_on: new Date().toISOString(),
       valid: true,
-      admin: false
+      admin: false,
     };
     setSelectedUser(newUser);
     setIsUserModalOpen(true);
@@ -66,10 +66,10 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
 
   const handleSaveGear = async (gear: any) => {
     try {
-      const response = await fetch('/api/admin/gear', {
-        method: 'POST',
+      const response = await fetch("/api/admin/gear", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(gear),
       });
@@ -92,10 +92,10 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
 
   const handleSaveUser = async (user: any) => {
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(user),
       });
@@ -127,7 +127,7 @@ export default function QuickActions({ gearItems = [], users = [] }: QuickAction
         >
           <Package className="h-6 w-6" />
         </Button>
-        
+
         <Button
           onClick={handleAddNewUser}
           className="rounded-full w-14 h-14 shadow-lg bg-green-600 hover:bg-green-700"

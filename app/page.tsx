@@ -1,12 +1,6 @@
 import Hero from "@/components/hero";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 import Image from "next/image";
 
@@ -22,8 +16,8 @@ export default async function Home() {
                 <CardHeader>
                   <CardTitle>Gear Rental</CardTitle>
                   <CardDescription>
-                    Rent from our collection of outdoor equipment. Find
-                    everything from tents to climbing gear.
+                    Rent from our collection of outdoor equipment. Find everything from tents to
+                    climbing gear.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -49,9 +43,7 @@ export default async function Home() {
               <Card className="shadow-md transition-transform hover:scale-105">
                 <CardHeader>
                   <CardTitle>Resources</CardTitle>
-                  <CardDescription>
-                    Use our resources for your own trips.
-                  </CardDescription>
+                  <CardDescription>Use our resources for your own trips.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Image
@@ -75,8 +67,8 @@ export default async function Home() {
                 <CardHeader>
                   <CardTitle>Trips &amp; Events</CardTitle>
                   <CardDescription>
-                    Discover and join our exciting outdoor adventures.
-                    Participate in group hikes and skill-building workshops.
+                    Discover and join our exciting outdoor adventures. Participate in group hikes
+                    and skill-building workshops.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
