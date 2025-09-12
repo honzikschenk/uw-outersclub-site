@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import GearEditModal from "./GearEditModal";
 import { 
   Search, 
@@ -48,6 +49,8 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
   const [filterStatus, setFilterStatus] = useState<"all" | "available" | "out_of_stock">("all");
   const [selectedGear, setSelectedGear] = useState<GearItem | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   
   // Change tracking state for batch operations
   const [originalRows, setOriginalRows] = useState<GearItem[]>(gear || []);
@@ -62,7 +65,11 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
     setEditedRows(gear || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
+  setVisibleCount(PAGE_SIZE);
   }, [gear]);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, filterCategory, filterStatus]);
 
   const handleDelete = (gearId: number) => {
     const rowIndex = editedRows.findIndex(item => item.id === gearId);
@@ -227,6 +234,8 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
   });
 
   const hasChanges = editedRowIndices.size > 0 || deletedRows.size > 0;
+  const pagedGear = filteredGear.slice(0, visibleCount);
+  const remaining = Math.max(0, filteredGear.length - visibleCount);
 
   return (
     <Card>
@@ -306,7 +315,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
       <CardContent>
         {/* Grid View - Works on all screen sizes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredGear.map((item) => {
+          {pagedGear.map((item) => {
             const originalIndex = editedRows.findIndex(r => r.id === item.id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
@@ -421,6 +430,15 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
           </div>
         )}
       </CardContent>
+
+      <div className="px-6 pb-6">
+        <LoadMoreBar
+          hasMore={remaining > 0}
+          remaining={remaining}
+          size={PAGE_SIZE}
+          onLoadMore={() => setVisibleCount((v) => v + PAGE_SIZE)}
+        />
+      </div>
 
       {/* Edit Modal */}
       <GearEditModal

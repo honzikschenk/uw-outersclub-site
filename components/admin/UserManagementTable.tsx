@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import UserEditModal from "./UserEditModal";
 import { 
   Search, 
@@ -42,6 +43,8 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "admin">("all");
   const [selectedUser, setSelectedUser] = useState<Member | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Change tracking state for batch operations
   const [originalRows, setOriginalRows] = useState<Member[]>(members || []);
@@ -54,7 +57,11 @@ export default function UserManagementTable({ members }: UserManagementTableProp
     setEditedRows(members || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
+  setVisibleCount(PAGE_SIZE);
   }, [members]);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, filterStatus]);
 
   const handleDelete = (userId: string) => {
     const rowIndex = editedRows.findIndex(member => member.user_id === userId);
@@ -234,6 +241,8 @@ export default function UserManagementTable({ members }: UserManagementTableProp
   });
 
   const hasChanges = editedRowIndices.size > 0 || deletedRows.size > 0;
+  const pagedMembers = filteredMembers.slice(0, visibleCount);
+  const remaining = Math.max(0, filteredMembers.length - visibleCount);
 
   return (
     <Card>
@@ -294,7 +303,7 @@ export default function UserManagementTable({ members }: UserManagementTableProp
       <CardContent>
         {/* Grid View */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredMembers.map((member) => {
+          {pagedMembers.map((member) => {
             const originalIndex = editedRows.findIndex(r => r.user_id === member.user_id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
@@ -405,6 +414,15 @@ export default function UserManagementTable({ members }: UserManagementTableProp
           </div>
         )}
       </CardContent>
+
+      <CardFooter className="pt-0">
+        <LoadMoreBar
+          hasMore={remaining > 0}
+          remaining={remaining}
+          size={PAGE_SIZE}
+          onLoadMore={() => setVisibleCount((v) => v + PAGE_SIZE)}
+        />
+      </CardFooter>
 
       {/* Edit Modal */}
       {selectedUser && (

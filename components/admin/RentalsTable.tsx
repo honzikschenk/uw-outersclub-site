@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import RentalEditModal from "./RentalEditModal";
 import { 
   Search, 
@@ -49,6 +50,8 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "overdue" | "returned">("all");
   const [selectedRental, setSelectedRental] = useState<EnhancedRental | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Change tracking state for batch operations
   const [originalRows, setOriginalRows] = useState<EnhancedRental[]>(rentals || []);
@@ -61,7 +64,11 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
     setEditedRows(rentals || []);
     setEditedRowIndices(new Set());
     setDeletedRows(new Set());
+  setVisibleCount(PAGE_SIZE);
   }, [rentals]);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, filterStatus]);
 
   const handleDelete = (rentalId: number) => {
     const rowIndex = editedRows.findIndex(rental => rental.id === rentalId);
@@ -297,6 +304,8 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
   };
 
   const hasChanges = editedRowIndices.size > 0 || deletedRows.size > 0;
+  const pagedRentals = filteredRentals.slice(0, visibleCount);
+  const remaining = Math.max(0, filteredRentals.length - visibleCount);
 
   return (
     <Card>
@@ -357,7 +366,7 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
       <CardContent>
         {/* Grid View - Works on all screen sizes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filteredRentals.map((rental) => {
+          {pagedRentals.map((rental) => {
             const originalIndex = editedRows.findIndex(r => r.id === rental.id);
             const isEdited = editedRowIndices.has(originalIndex);
             const isDeleted = deletedRows.has(originalIndex);
@@ -482,6 +491,15 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
           </div>
         )}
       </CardContent>
+
+      <div className="px-6 pb-6">
+        <LoadMoreBar
+          hasMore={remaining > 0}
+          remaining={remaining}
+          size={PAGE_SIZE}
+          onLoadMore={() => setVisibleCount((v) => v + PAGE_SIZE)}
+        />
+      </div>
 
       {/* Edit Modal */}
       <RentalEditModal

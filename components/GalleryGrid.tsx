@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export type GalleryImage = {
@@ -25,6 +26,8 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
   const [activeGroupIdx, setActiveGroupIdx] = useState<number>(0);
   const [activeIdx, setActiveIdx] = useState<number>(0);
   const [carouselApi, setCarouselApi] = useState<any | null>(null);
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const openGroup = (gIndex: number, startAt = 0) => {
     setActiveGroupIdx(gIndex);
@@ -69,7 +72,7 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
     <div className="space-y-8">
       {/* Group cards */}
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groups.map((g, gi) => (
+        {groups.slice(0, visibleCount).map((g, gi) => (
           <article
             key={g.key}
     className="group rounded-xl border bg-white shadow-sm hover:shadow-lg transition overflow-hidden cursor-pointer"
@@ -85,6 +88,13 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
           </article>
         ))}
       </div>
+
+      <LoadMoreBar
+        hasMore={groups.length > visibleCount}
+        remaining={Math.max(0, groups.length - visibleCount)}
+        size={PAGE_SIZE}
+        onLoadMore={() => setVisibleCount((v) => v + PAGE_SIZE)}
+      />
 
       {/* Lightbox */}
       <Dialog open={open} onOpenChange={setOpen}>

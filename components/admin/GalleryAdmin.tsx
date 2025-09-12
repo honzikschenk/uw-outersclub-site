@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import { Folder, FolderOpen, Plus } from "lucide-react";
 
 export type GalleryRow = {
@@ -13,6 +14,8 @@ export type GalleryRow = {
 
 export default function GalleryAdmin({ initialImages }: { initialImages: GalleryRow[] }) {
   const [images, setImages] = useState<GalleryRow[]>(initialImages);
+  const PAGE_SIZE = 15;
+  const [visible, setVisible] = useState(PAGE_SIZE);
   const [title, setTitle] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -174,7 +177,7 @@ export default function GalleryAdmin({ initialImages }: { initialImages: Gallery
               setExpandedGroup(newId);
             }}
           />
-          {groups.map((g) => (
+          {groups.slice(0, visible).map((g) => (
             <FolderTile
               key={g.key}
               title={g.caption || 'Untitled'}
@@ -188,6 +191,9 @@ export default function GalleryAdmin({ initialImages }: { initialImages: Gallery
               }}
             />
           ))}
+        </div>
+        <div className="pt-2">
+          <LoadMoreBar hasMore={groups.length > visible} remaining={Math.max(0, groups.length - visible)} size={PAGE_SIZE} onLoadMore={() => setVisible((v)=> v + PAGE_SIZE)} />
         </div>
 
         {/* Expanded detail: either a group or ungrouped */}

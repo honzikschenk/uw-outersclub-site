@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import LoadMoreBar from "@/components/ui/load-more-bar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import sanitizeHtml from "sanitize-html";
 
@@ -20,6 +21,8 @@ type PostRow = {
 
 export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow[] }) {
   const [posts, setPosts] = useState<PostRow[]>(initialPosts);
+  const PAGE_SIZE = 12;
+  const [visible, setVisible] = useState(PAGE_SIZE);
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<PostRow | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -286,7 +289,7 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {posts.map((p) => (
+          {posts.slice(0, visible).map((p) => (
             <div key={p.id} className="border rounded-lg p-4 bg-white">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -303,6 +306,9 @@ export default function BlogAdminTable({ initialPosts }: { initialPosts: PostRow
               </div>
             </div>
           ))}
+        </div>
+        <div className="pt-4">
+          <LoadMoreBar hasMore={posts.length > visible} remaining={Math.max(0, posts.length - visible)} size={PAGE_SIZE} onLoadMore={() => setVisible((v)=> v + PAGE_SIZE)} />
         </div>
       </CardContent>
 
