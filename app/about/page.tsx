@@ -39,6 +39,23 @@ export default async function About() {
           or any comments/suggestions.
         </p>
       </section>
+
+      {/* TODO: Add FAQ */}
+      <Accordion type="single" collapsible>
+        <AccordionItem value="item-1">
+          <AccordionTrigger>Question one</AccordionTrigger>
+          <AccordionContent>Yes.</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-2">
+          <AccordionTrigger>Question two</AccordionTrigger>
+          <AccordionContent>No.</AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-3">
+          <AccordionTrigger>Question three</AccordionTrigger>
+          <AccordionContent>Maybe.</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
       <section id="become-a-member">
         <h2 className="text-2xl font-semibold mb-4 mt-8">Become a Member</h2>
         <p>
