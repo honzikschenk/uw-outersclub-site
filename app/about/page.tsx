@@ -190,6 +190,14 @@ export default async function About() {
 
           <div className="flex flex-col items-center">
             <Avatar className="w-32 h-32">
+              <AvatarImage src="/execs/kyle.jpg" />
+              <AvatarFallback>JS</AvatarFallback>
+            </Avatar>
+            <h3 className="text-lg font-semibold mt-2">John Smith</h3>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <Avatar className="w-32 h-32">
               <AvatarImage src="/" />
               <AvatarFallback>?</AvatarFallback>
             </Avatar>
