@@ -47,23 +47,24 @@ export async function reserveCartItems({
     };
   }
 
-  // 3. Check availability for all items
+  // 3. Allocate specific gear item instances for each cart item
+  //    We pick one available GearItem (admin-managed unique ID) per Gear for the requested dates.
+  type ReservationRow = {
+    user_id: string;
+    gear_id: string | number;
+    gear_item_id: string | number;
+    lent_date: string;
+    due_date: string;
+    returned: boolean;
+  };
+
+  const reservations: ReservationRow[] = [];
   for (const cartItem of cartItems) {
-    const { data: gears, error: gearError } = await supabase
-      .from("Gear")
-      .select("num_available")
-      .eq("id", cartItem.id)
-      .single();
+    const requestedStart = cartItem.selectedDates.from.getTime();
+    const requestedEnd = cartItem.selectedDates.to.getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
 
-    if (gearError)
-      return {
-        error: `Could not check availability for ${cartItem.name}.`,
-      };
-    if (!gears || gears.num_available <= 0) {
-      return { error: `${cartItem.name} is not available for reservation.` };
-    }
-
-    // Check if the user already has this specific item rented for overlapping dates
+    // 3a. Ensure the user doesn't already have the same Gear reserved overlapping
     const { data: userRentals, error: userRentalError } = await supabase
       .from("Lent")
       .select("id, lent_date, due_date")
@@ -76,60 +77,75 @@ export async function reserveCartItems({
         error: `Could not check your existing rentals for ${cartItem.name}.`,
       };
 
-    const requestedStart = cartItem.selectedDates.from.getTime();
-    const requestedEnd = cartItem.selectedDates.to.getTime();
-    const oneDay = 24 * 60 * 60 * 1000;
-
-    // Check if user already has this item for overlapping dates
     const userHasOverlap = (userRentals || []).some((rental: any) => {
       const lentStart = new Date(rental.lent_date).getTime();
       const lentEnd = new Date(rental.due_date).getTime();
       return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;
     });
-
     if (userHasOverlap) {
       return {
         error: `You already have ${cartItem.name} rented for overlapping dates.`,
       };
     }
 
-    // Check for overlapping rentals from all users for this specific item
-    const { data: allRentals, error: allRentalsError } = await supabase
-      .from("Lent")
-      .select("id, lent_date, due_date, returned")
+    // 3b. Get all GearItem IDs for this Gear
+    const { data: gearItems, error: gearItemsError } = await supabase
+      .from("GearItem")
+      .select("id")
       .eq("gear_id", cartItem.id)
+      .eq("active", true);
+
+    if (gearItemsError) {
+      return { error: `Could not load inventory for ${cartItem.name}.` };
+    }
+    if (!gearItems || gearItems.length === 0) {
+      return { error: `No units configured for ${cartItem.name}.` };
+    }
+
+    const allItemIds = gearItems.map((gi: any) => gi.id);
+
+    // 3c. Fetch rentals that overlap the requested range for these items
+    //     Filter by date window to minimize data, apply precise overlap in app layer.
+    const { data: overlappingRentals, error: overlapError } = await supabase
+      .from("Lent")
+      .select("gear_item_id, lent_date, due_date, returned")
+      .in("gear_item_id", allItemIds)
       .neq("returned", true);
 
-    if (allRentalsError)
-      return {
-        error: `Could not check availability for ${cartItem.name}.`,
-      };
+    if (overlapError) {
+      return { error: `Could not verify availability for ${cartItem.name}.` };
+    }
 
-    const overlapCount = (allRentals || []).filter((rental: any) => {
-      const lentStart = new Date(rental.lent_date).getTime();
-      const lentEnd = new Date(rental.due_date).getTime();
-      return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;
-    }).length;
+    const reservedIds = new Set(
+      (overlappingRentals || [])
+        .filter((r: any) => {
+          const lentStart = new Date(r.lent_date).getTime();
+          const lentEnd = new Date(r.due_date).getTime();
+          return requestedStart < lentEnd - oneDay && requestedEnd > lentStart;
+        })
+        .map((r: any) => r.gear_item_id),
+    );
 
-    if (overlapCount >= gears.num_available) {
+    const availableItemId = allItemIds.find((id: any) => !reservedIds.has(id));
+    if (!availableItemId) {
       return {
         error: `All available units of ${cartItem.name} are already reserved for the selected dates.`,
       };
     }
-  }
 
-  // 4. Create all reservations
-  const reservations = cartItems.map((cartItem) => ({
-    user_id: userId,
-    gear_id: cartItem.id,
-    lent_date: cartItem.selectedDates.from.toISOString(),
-    due_date: cartItem.selectedDates.to.toISOString(),
-    returned: false,
-  }));
+    reservations.push({
+      user_id: userId,
+      gear_id: cartItem.id,
+      gear_item_id: availableItemId,
+      lent_date: cartItem.selectedDates.from.toISOString(),
+      due_date: cartItem.selectedDates.to.toISOString(),
+      returned: false,
+    });
+  }
 
   console.log(`[reserveCartItems] Creating reservations:`, JSON.stringify(reservations, null, 2));
 
-  const { error: insertError } = await supabase.from("Lent").insert(reservations);
+  const { error: insertError } = await supabase.from("Lent").insert(reservations as any);
 
   if (insertError) {
     console.error(`[reserveCartItems] Insert error:`, insertError);

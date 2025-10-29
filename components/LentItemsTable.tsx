@@ -8,9 +8,10 @@ import { useRouter } from "next/navigation";
 interface LentItemsTableProps {
   lentItems: any[];
   gearMap: Record<string, string>;
+  gearItemMap?: Record<string, string>;
 }
 
-export default function LentItemsTable({ lentItems, gearMap }: LentItemsTableProps) {
+export default function LentItemsTable({ lentItems, gearMap, gearItemMap }: LentItemsTableProps) {
   const [showReturned, setShowReturned] = useState(false);
   const [cancelingRentals, setCancelingRentals] = useState<Set<string>>(new Set());
   const router = useRouter();
@@ -116,7 +117,14 @@ export default function LentItemsTable({ lentItems, gearMap }: LentItemsTablePro
                   className={`${status === "Past Due" ? "bg-red-100" : ""} ${item.returned ? "bg-gray-50 opacity-75" : ""}`}
                 >
                   <td className="px-4 py-2 flex items-center gap-3">
-                    <span>{gearMap[item.gear_id] || item.gear_id || "?"}</span>
+                    <div className="flex flex-col">
+                      <span>{gearMap[item.gear_id] || item.gear_id || "?"}</span>
+                      {gearItemMap && item.gear_item_id && (
+                        <span className="text-xs text-gray-600">
+                          Unit: {gearItemMap[item.gear_item_id]}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2">
                     {item.lent_date ? new Date(item.lent_date).toLocaleDateString() : "-"}

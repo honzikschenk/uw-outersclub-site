@@ -13,16 +13,18 @@ export default async function RentalsPage() {
     { data: allRentals, error: rentalsError },
     { data: gearData, error: gearError },
     { data: userData, error: userError },
+    { data: gearItems, error: gearItemsError },
   ] = await Promise.all([
     supabase
       .from("Lent")
-      .select("id, lent_date, due_date, gear_id, user_id, returned")
+      .select("id, lent_date, due_date, gear_id, gear_item_id, user_id, returned")
       .order("lent_date", { ascending: false }),
     supabase.from("Gear").select("id, name, category"),
     supabase.from("Membership").select("user_id, name"),
+    supabase.from("GearItem").select("id, code"),
   ]);
 
-  if (rentalsError || gearError || userError) {
+  if (rentalsError || gearError || userError || gearItemsError) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-gray-900">Rental Management</h1>
@@ -30,7 +32,10 @@ export default async function RentalsPage() {
           <CardContent className="p-6">
             <p className="text-red-600">
               Error loading rental data:{" "}
-              {rentalsError?.message || gearError?.message || userError?.message}
+              {rentalsError?.message ||
+                gearError?.message ||
+                userError?.message ||
+                gearItemsError?.message}
             </p>
           </CardContent>
         </Card>
@@ -41,10 +46,15 @@ export default async function RentalsPage() {
   const rentals = allRentals || [];
   const gear = gearData || [];
   const users = userData || [];
+  const gearItemRows = gearItems || [];
 
   // Create lookup maps
   const gearMap = gear.reduce((acc, g) => ({ ...acc, [g.id]: g }), {} as Record<number, any>);
   const userMap = users.reduce((acc, u) => ({ ...acc, [u.user_id]: u }), {} as Record<string, any>);
+  const gearItemCodeMap = gearItemRows.reduce(
+    (acc, gi) => ({ ...acc, [gi.id]: gi.code }),
+    {} as Record<string | number, string>,
+  );
 
   // Calculate rental statistics
   const now = new Date();
@@ -89,6 +99,7 @@ export default async function RentalsPage() {
       gearName: gearMap[rental.gear_id]?.name || `Gear #${rental.gear_id}`,
       gearCategory: gearMap[rental.gear_id]?.category || "Unknown",
       userName: userMap[rental.user_id]?.name || "Unknown User",
+      gearItemCode: rental.gear_item_id ? gearItemCodeMap[rental.gear_item_id] : undefined,
       status,
     };
   });

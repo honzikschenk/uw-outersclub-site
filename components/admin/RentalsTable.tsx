@@ -33,12 +33,14 @@ interface EnhancedRental {
   lent_date: string;
   due_date: string | null;
   gear_id: number;
+  gear_item_id?: number | string;
   user_id: string;
   returned: boolean;
   gearName: string;
   gearCategory: string;
   userName: string;
   status: "returned" | "overdue" | "active";
+  gearItemCode?: string;
 }
 
 interface RentalsTableProps {
@@ -389,6 +391,9 @@ export default function RentalsTable({ rentals }: RentalsTableProps) {
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <h3 className="font-semibold text-sm truncate">{rental.gearName}</h3>
+                        {rental.gearItemCode && (
+                          <p className="text-xs text-gray-600">Unit: {rental.gearItemCode}</p>
+                        )}
                         <p className="text-xs text-gray-600 capitalize">{rental.gearCategory}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center">

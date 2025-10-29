@@ -56,7 +56,7 @@ export default async function MemberDashboard() {
     // Still fetch lent items for non-valid users
     const { data: lentItems, error: lentError } = await supabase
       .from("Lent")
-      .select("id, user_id, gear_id, lent_date, due_date, returned")
+      .select("id, user_id, gear_id, gear_item_id, lent_date, due_date, returned")
       .eq("user_id", user.id)
       .order("due_date", { ascending: true });
 
@@ -68,17 +68,33 @@ export default async function MemberDashboard() {
       );
     }
 
-    // Fetch all gear names for user's lent items
+    // Fetch all gear names and gear item codes for user's lent items
     let gearMap: Record<string, string> = {};
+    let gearItemMap: Record<string, string> = {};
     if (lentItems && lentItems.length > 0) {
       const gearIds = Array.from(
         new Set(lentItems.map((item: any) => item.gear_id).filter(Boolean)),
+      );
+      const gearItemIds = Array.from(
+        new Set(lentItems.map((item: any) => item.gear_item_id).filter(Boolean)),
       );
       if (gearIds.length > 0) {
         const { data: gearRows } = await supabase.from("Gear").select("id, name").in("id", gearIds);
         if (gearRows) {
           gearMap = gearRows.reduce((acc: Record<string, string>, g: any) => {
             acc[g.id] = g.name;
+            return acc;
+          }, {});
+        }
+      }
+      if (gearItemIds.length > 0) {
+        const { data: gearItemRows } = await supabase
+          .from("GearItem")
+          .select("id, code")
+          .in("id", gearItemIds);
+        if (gearItemRows) {
+          gearItemMap = gearItemRows.reduce((acc: Record<string, string>, gi: any) => {
+            acc[gi.id] = gi.code;
             return acc;
           }, {});
         }
@@ -134,7 +150,7 @@ export default async function MemberDashboard() {
 
         <h1 className="text-4xl font-bold mb-8">My Lent Items</h1>
         {lentItems && lentItems.length > 0 ? (
-          <LentItemsTable lentItems={lentItems} gearMap={gearMap} />
+          <LentItemsTable lentItems={lentItems} gearMap={gearMap} gearItemMap={gearItemMap} />
         ) : (
           <p className="p-8 text-muted-foreground text-center">
             You have no items currently checked out.
@@ -147,7 +163,7 @@ export default async function MemberDashboard() {
   // Fetch currently lent items for this user
   const { data: lentItems, error: lentError } = await supabase
     .from("Lent")
-    .select("id, user_id, gear_id, lent_date, due_date, returned")
+    .select("id, user_id, gear_id, gear_item_id, lent_date, due_date, returned")
     .eq("user_id", user.id)
     .order("due_date", { ascending: true });
 
@@ -159,15 +175,31 @@ export default async function MemberDashboard() {
     );
   }
 
-  // Fetch all gear names for user's lent items
+  // Fetch all gear names and gear item codes for user's lent items
   let gearMap: Record<string, string> = {};
+  let gearItemMap: Record<string, string> = {};
   if (lentItems && lentItems.length > 0) {
     const gearIds = Array.from(new Set(lentItems.map((item: any) => item.gear_id).filter(Boolean)));
+    const gearItemIds = Array.from(
+      new Set(lentItems.map((item: any) => item.gear_item_id).filter(Boolean)),
+    );
     if (gearIds.length > 0) {
       const { data: gearRows } = await supabase.from("Gear").select("id, name").in("id", gearIds);
       if (gearRows) {
         gearMap = gearRows.reduce((acc: Record<string, string>, g: any) => {
           acc[g.id] = g.name;
+          return acc;
+        }, {});
+      }
+    }
+    if (gearItemIds.length > 0) {
+      const { data: gearItemRows } = await supabase
+        .from("GearItem")
+        .select("id, code")
+        .in("id", gearItemIds);
+      if (gearItemRows) {
+        gearItemMap = gearItemRows.reduce((acc: Record<string, string>, gi: any) => {
+          acc[gi.id] = gi.code;
           return acc;
         }, {});
       }
@@ -183,7 +215,7 @@ export default async function MemberDashboard() {
       </nav>
       <h1 className="text-4xl font-bold mb-8">My Lent Items</h1>
       {lentItems && lentItems.length > 0 ? (
-        <LentItemsTable lentItems={lentItems} gearMap={gearMap} />
+        <LentItemsTable lentItems={lentItems} gearMap={gearMap} gearItemMap={gearItemMap} />
       ) : (
         <p className="p-8 text-muted-foreground text-center">
           You have no items currently checked out.

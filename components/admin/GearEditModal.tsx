@@ -4,7 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, DollarSign, Hash, FileText, Archive, X, ChevronDown, Plus } from "lucide-react";
+import {
+  Package,
+  DollarSign,
+  Hash,
+  FileText,
+  Archive,
+  X,
+  ChevronDown,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +36,13 @@ interface GearItem {
   revenue_generated: number | null;
 }
 
+interface GearUnit {
+  id: string; // uuid
+  gear_id: number;
+  code: string;
+  active: boolean;
+}
+
 interface GearEditModalProps {
   gear: GearItem | null;
   isOpen: boolean;
@@ -44,6 +61,9 @@ export default function GearEditModal({
   const [formData, setFormData] = useState<GearItem | null>(gear);
   const [isCreatingNewCategory, setIsCreatingNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [units, setUnits] = useState<GearUnit[]>([]);
+  const [unitsLoading, setUnitsLoading] = useState(false);
+  const [newUnitCode, setNewUnitCode] = useState("");
 
   // Predefined categories based on what's available
   const predefinedCategories = [
@@ -65,6 +85,12 @@ export default function GearEditModal({
   // Update form data when gear prop changes
   React.useEffect(() => {
     setFormData(gear);
+    // Load units when opening and when gear changes
+    if (gear?.id && isOpen) {
+      loadUnits(gear.id);
+    } else {
+      setUnits([]);
+    }
   }, [gear]);
 
   // Handle escape key
@@ -90,6 +116,68 @@ export default function GearEditModal({
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose, isCreatingNewCategory]);
+
+  const loadUnits = async (gearId: number) => {
+    try {
+      setUnitsLoading(true);
+      const res = await fetch(`/api/admin/gear-items?gear_id=${gearId}`);
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      setUnits(json.data || []);
+    } catch (e) {
+      console.error("Failed to load gear units", e);
+    } finally {
+      setUnitsLoading(false);
+    }
+  };
+
+  const createUnit = async () => {
+    if (!formData?.id || !newUnitCode.trim()) return;
+    try {
+      const res = await fetch("/api/admin/gear-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", gear_id: formData.id, code: newUnitCode.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Create failed");
+      setNewUnitCode("");
+      await loadUnits(formData.id);
+    } catch (e: any) {
+      alert(e?.message || "Failed to create unit");
+    }
+  };
+
+  const updateUnit = async (unitId: string, patch: Partial<Pick<GearUnit, "code" | "active">>) => {
+    try {
+      const res = await fetch("/api/admin/gear-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update", id: unitId, ...patch }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Update failed");
+      if (formData?.id) await loadUnits(formData.id);
+    } catch (e: any) {
+      alert(e?.message || "Failed to update unit");
+    }
+  };
+
+  const deleteUnit = async (unitId: string) => {
+    if (!confirm("Delete this unit? It cannot be undone.")) return;
+    try {
+      const res = await fetch("/api/admin/gear-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id: unitId }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Delete failed");
+      if (formData?.id) await loadUnits(formData.id);
+    } catch (e: any) {
+      alert(e?.message || "Failed to delete unit");
+    }
+  };
 
   if (!formData || !isOpen) return null;
 
@@ -299,6 +387,65 @@ export default function GearEditModal({
                   {formData.num_available > 0 ? "In Stock" : "Out of Stock"}
                 </Badge>
               </div>
+            </div>
+          </div>
+
+          {/* Units management */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <Hash className="h-4 w-4" />
+              Units (per-gear items)
+            </h3>
+
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Label htmlFor="new_unit_code">New Unit Code</Label>
+                <Input
+                  id="new_unit_code"
+                  placeholder="e.g., 5112"
+                  value={newUnitCode}
+                  onChange={(e) => setNewUnitCode(e.target.value)}
+                />
+              </div>
+              <Button onClick={createUnit} disabled={!newUnitCode.trim() || unitsLoading}>
+                <Plus className="h-4 w-4 mr-2" /> Add Unit
+              </Button>
+            </div>
+
+            <div className="border rounded-md divide-y">
+              {unitsLoading && <div className="p-3 text-sm text-gray-500">Loading units…</div>}
+              {!unitsLoading && units.length === 0 && (
+                <div className="p-3 text-sm text-gray-500">No units yet.</div>
+              )}
+              {!unitsLoading &&
+                units.map((u) => (
+                  <div key={u.id} className="p-3 flex items-center gap-3">
+                    <div className="flex-1 flex items-center gap-2">
+                      <Label className="text-xs text-gray-600">Code</Label>
+                      <Input
+                        className="max-w-[160px]"
+                        value={u.code}
+                        onChange={(e) =>
+                          setUnits((prev) =>
+                            prev.map((x) => (x.id === u.id ? { ...x, code: e.target.value } : x)),
+                          )
+                        }
+                        onBlur={() => updateUnit(u.id, { code: u.code })}
+                      />
+                      <Label className="text-xs text-gray-600 ml-3">Active</Label>
+                      <input
+                        type="checkbox"
+                        aria-label={`Toggle active for unit ${u.code}`}
+                        title={`Toggle active for unit ${u.code}`}
+                        checked={u.active}
+                        onChange={(e) => updateUnit(u.id, { active: e.target.checked })}
+                      />
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => deleteUnit(u.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
             </div>
           </div>
 
