@@ -20,6 +20,7 @@ interface GearUtilization {
   name: string;
   category: string;
   num_available: number;
+  unit_count?: number;
   description: string | null;
   price_tu_th: number | null;
   price_th_tu: number | null;
@@ -58,7 +59,7 @@ export default function GearUtilizationChart({ gearUtilization }: GearUtilizatio
     category: item.category,
     totalRentals: item.totalRentals,
     currentlyRented: item.currentlyRented,
-    available: item.num_available || 0,
+    available: (item.unit_count ?? item.num_available ?? 0) as number,
     utilizationScore: item.utilizationScore,
     fill: colors[index % colors.length],
   }));

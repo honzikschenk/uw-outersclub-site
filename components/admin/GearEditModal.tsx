@@ -28,6 +28,7 @@ interface GearItem {
   name: string;
   category: string;
   num_available: number;
+  unit_count?: number;
   description: string | null;
   price_tu_th: number | null;
   price_th_tu: number | null;
@@ -351,7 +352,7 @@ export default function GearEditModal({
             </div>
           </div>
 
-          {/* Inventory */}
+          {/* Inventory (derived from GearItem units) */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium flex items-center gap-2">
               <Archive className="h-4 w-4" />
@@ -359,35 +360,21 @@ export default function GearEditModal({
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="num_available">Units Available</Label>
-                <Input
-                  id="num_available"
-                  type="number"
-                  min="0"
-                  value={formData.num_available}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "num_available",
-                      e.target.value ? parseInt(e.target.value) : 0,
-                    )
-                  }
-                />
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <Label className="text-sm text-gray-600">Active Units</Label>
+                <p className="text-2xl font-bold text-green-700">
+                  {units.filter((u) => u.active).length}
+                </p>
               </div>
-
-              <div className="flex items-center gap-2 pt-6">
-                <Badge
-                  variant={formData.num_available > 0 ? "default" : "secondary"}
-                  className={
-                    formData.num_available > 0
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }
-                >
-                  {formData.num_available > 0 ? "In Stock" : "Out of Stock"}
-                </Badge>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <Label className="text-sm text-gray-600">Total Units</Label>
+                <p className="text-2xl font-bold text-blue-700">{units.length}</p>
               </div>
             </div>
+            <p className="text-xs text-gray-500">
+              This count is derived from unit items below. Toggle a unit's Active checkbox to
+              include/exclude it.
+            </p>
           </div>
 
           {/* Units management */}

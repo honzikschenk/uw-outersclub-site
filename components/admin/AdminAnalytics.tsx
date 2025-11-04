@@ -37,13 +37,13 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
 
     // Category analytics
     const categoryStats = gear.reduce(
-      (acc: Record<string, { total: number; available: number }>, item) => {
+      (acc: Record<string, { total: number; available: number }>, item: any) => {
         const category = item.category || "Uncategorized";
         if (!acc[category]) {
           acc[category] = { total: 0, available: 0 };
         }
         acc[category].total++;
-        acc[category].available += item.num_available || 0;
+        acc[category].available += item.unit_count ?? item.num_available ?? 0;
         return acc;
       },
       {},
@@ -120,7 +120,9 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                 <div className="text-right">
                   <p className="font-medium">{item.rentalCount} rentals</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.num_available ? `${item.num_available} available` : "Out of stock"}
+                    {(item.unit_count ?? item.num_available ?? 0)
+                      ? `${item.unit_count ?? item.num_available} units`
+                      : "No units"}
                   </p>
                 </div>
               </div>
@@ -144,12 +146,12 @@ export default function AdminAnalytics({ lentItems, members, gear }: AdminAnalyt
                     {stats.available}/{stats.total} available
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{ width: `${(stats.available / stats.total) * 100}%` }}
-                  ></div>
-                </div>
+                <progress
+                  value={(stats.available / stats.total) * 100}
+                  max={100}
+                  className="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:bg-green-500 [&::-moz-progress-bar]:bg-green-500"
+                  aria-label={`Availability ${Math.round((stats.available / stats.total) * 100)}%`}
+                />
               </div>
             ))}
           </div>

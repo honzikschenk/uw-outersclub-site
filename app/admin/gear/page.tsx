@@ -39,7 +39,29 @@ export default function GearPage() {
         return;
       }
 
-      setGear(allGear || []);
+      // Fetch unit counts by gear_id from admin API (service role)
+      let unitCounts: Record<number, { total_units: number; active_units: number }> = {};
+      try {
+        const res = await fetch("/api/admin/gear-items/counts", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          for (const row of json.data || []) {
+            unitCounts[row.gear_id] = {
+              total_units: row.total_units,
+              active_units: row.active_units,
+            };
+          }
+        }
+      } catch {}
+
+      // Merge counts into gear objects as unit_count (active units) and unit_count_total
+      const mergedGear = (allGear || []).map((g) => ({
+        ...g,
+        unit_count_total: unitCounts[g.id]?.total_units ?? 0,
+        unit_count: unitCounts[g.id]?.active_units ?? 0,
+      }));
+
+      setGear(mergedGear);
       setRentals(rentalData || []);
     } catch (err) {
       setError("Failed to load data");
@@ -111,14 +133,20 @@ export default function GearPage() {
     const lentDate = new Date(r.lent_date).toISOString().split("T")[0];
     return !r.returned && lentDate <= today;
   }).length;
-  const totalAvailableUnits =
-    gear.reduce((sum, g) => sum + (g.num_available || 0), 0) - currentlyRentedCount;
+  const totalActiveUnits = gear.reduce(
+    (sum, g: any) => sum + (g.unit_count ?? g.num_available ?? 0),
+    0,
+  );
+  const totalAvailableUnits = Math.max(0, totalActiveUnits - currentlyRentedCount);
 
   // Group gear by category
   const categories = Array.from(new Set(gear.map((g) => g.category))).filter(Boolean);
   const categoryStats = categories.map((category) => {
     const categoryGear = gear.filter((g) => g.category === category);
-    const totalUnits = categoryGear.reduce((sum, g) => sum + (g.num_available || 0), 0);
+    const totalUnits = categoryGear.reduce(
+      (sum, g: any) => sum + (g.unit_count ?? g.num_available ?? 0),
+      0,
+    );
     const totalItems = categoryGear.length;
     const rentalCount = rentals.filter((r) => {
       const lentDate = new Date(r.lent_date).toISOString().split("T")[0];

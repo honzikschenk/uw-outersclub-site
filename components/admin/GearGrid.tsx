@@ -30,6 +30,7 @@ interface GearItem {
   name: string;
   category: string;
   num_available: number;
+  unit_count?: number; // derived from GearItem active count
   description: string | null;
   price_tu_th: number | null;
   price_th_tu: number | null;
@@ -216,6 +217,7 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
 
   // Filter gear
   const filteredGear = editedRows.filter((item) => {
+    const displayCount = (item.unit_count ?? item.num_available ?? 0) as number;
     const matchesSearch =
       !searchTerm ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -226,8 +228,8 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
 
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "available" && (item.num_available || 0) > 0) ||
-      (filterStatus === "out_of_stock" && (item.num_available || 0) === 0);
+      (filterStatus === "available" && displayCount > 0) ||
+      (filterStatus === "out_of_stock" && displayCount === 0);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -377,25 +379,28 @@ export default function GearGrid({ gear, existingCategories = [] }: GearGridProp
                   </div>
 
                   <div className="mb-3">
-                    <Badge
-                      variant={(item.num_available || 0) > 0 ? "default" : "secondary"}
-                      className={
-                        (item.num_available || 0) > 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }
-                    >
-                      <div className="flex items-center gap-1">
-                        {(item.num_available || 0) > 0 ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <XCircle className="h-3 w-3" />
-                        )}
-                        {(item.num_available || 0) > 0
-                          ? `${item.num_available} available`
-                          : "Out of stock"}
-                      </div>
-                    </Badge>
+                    {(() => {
+                      const displayCount = (item.unit_count ?? item.num_available ?? 0) as number;
+                      return (
+                        <Badge
+                          variant={displayCount > 0 ? "default" : "secondary"}
+                          className={
+                            displayCount > 0
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }
+                        >
+                          <div className="flex items-center gap-1">
+                            {displayCount > 0 ? (
+                              <CheckCircle className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            {displayCount > 0 ? `${displayCount} units` : "No units"}
+                          </div>
+                        </Badge>
+                      );
+                    })()}
                   </div>
 
                   {item.description && (

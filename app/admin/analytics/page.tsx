@@ -55,7 +55,26 @@ export default async function AnalyticsPage() {
 
   const lentItems = allLentItems || [];
   const members = allMembers || [];
-  const gear = allGear || [];
+  let gear = allGear || [];
+
+  // Merge GearItem unit counts into gear for analytics
+  try {
+    const res = await fetch(`/api/admin/gear-items/counts`, {
+      cache: "no-store",
+      // @ts-ignore
+      next: { revalidate: 0 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const byId: Record<number, { total_units: number; active_units: number }> = {};
+      for (const row of json.data || []) byId[row.gear_id] = row;
+      gear = gear.map((g: any) => ({
+        ...g,
+        unit_count_total: byId[g.id]?.total_units ?? 0,
+        unit_count: byId[g.id]?.active_units ?? 0,
+      }));
+    }
+  } catch {}
   const stats = monthlyStats || [];
 
   // Calculate key metrics
@@ -111,7 +130,7 @@ export default async function AnalyticsPage() {
       }
 
       acc[category].totalItems++;
-      acc[category].availableItems += gearItem.num_available || 0;
+      acc[category].availableItems += (gearItem as any).unit_count ?? gearItem.num_available ?? 0;
 
       const itemRentals = lentItems.filter((rental) => rental.gear_id === gearItem.id);
       acc[category].totalRentals += itemRentals.length;
@@ -245,12 +264,12 @@ export default async function AnalyticsPage() {
                     </div>
                   </div>
                   <div className="mt-3">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-orange-500 h-2 rounded-full"
-                        style={{ width: `${category.utilizationRate}%` }}
-                      ></div>
-                    </div>
+                    <progress
+                      value={category.utilizationRate}
+                      max={100}
+                      className="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-value]:bg-orange-500 [&::-moz-progress-bar]:bg-orange-500"
+                      aria-label={`Utilization ${category.utilizationRate}%`}
+                    />
                     <p className="text-xs text-gray-600 mt-1">
                       {category.averageRentalsPerItem} avg rentals per item
                     </p>
