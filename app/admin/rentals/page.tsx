@@ -1,9 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, AlertTriangle, CheckCircle, Calendar, FileText, TrendingDown } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle, Calendar } from "lucide-react";
 import RentalsTable from "@/components/admin/RentalsTable";
-import RentalChart from "@/components/admin/RentalChart";
 
 export default async function RentalsPage() {
   const supabase = await createClient();
@@ -159,9 +157,6 @@ export default async function RentalsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Rental Trends Chart */}
-      <RentalChart rentals={enhancedRentals} />
 
       {/* Rentals Table */}
       <RentalsTable rentals={enhancedRentals} />

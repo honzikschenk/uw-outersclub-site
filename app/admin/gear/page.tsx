@@ -3,9 +3,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, Archive, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import { Package, Plus, Archive, CheckCircle, XCircle } from "lucide-react";
 import GearGrid from "@/components/admin/GearGrid";
-import GearCategoryChart from "@/components/admin/GearCategoryChart";
 import GearEditModal from "@/components/admin/GearEditModal";
 
 export default function GearPage() {
@@ -139,39 +138,10 @@ export default function GearPage() {
   );
   const totalAvailableUnits = Math.max(0, totalActiveUnits - currentlyRentedCount);
 
-  // Group gear by category
+  // Group gear by category (names only for summary card)
   const categories = Array.from(new Set(gear.map((g) => g.category))).filter(Boolean);
-  const categoryStats = categories.map((category) => {
-    const categoryGear = gear.filter((g) => g.category === category);
-    const totalUnits = categoryGear.reduce(
-      (sum, g: any) => sum + (g.unit_count ?? g.num_available ?? 0),
-      0,
-    );
-    const totalItems = categoryGear.length;
-    const rentalCount = rentals.filter((r) => {
-      const lentDate = new Date(r.lent_date).toISOString().split("T")[0];
-      return categoryGear.some((g) => g.id === r.gear_id) && !r.returned && lentDate <= today;
-    }).length;
 
-    return {
-      category,
-      total: totalItems,
-      totalUnits,
-      currentlyRented: rentalCount,
-      availableUnits: Math.max(0, totalUnits - rentalCount),
-      utilizationRate: totalUnits > 0 ? Math.round((rentalCount / totalUnits) * 100) : 0,
-    };
-  });
-
-  // Calculate most popular gear (by rental frequency)
-  const gearRentalCounts = gear
-    .map((g) => {
-      const rentalCount = rentals.filter((r) => r.gear_id === g.id).length;
-      return { ...g, rentalCount };
-    })
-    .sort((a, b) => b.rentalCount - a.rentalCount);
-
-  const popularGear = gearRentalCounts.slice(0, 5);
+  // Note: Additional analytics (e.g., popularity, category charts) were removed to simplify this page.
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -236,47 +206,7 @@ export default function GearPage() {
         </Card>
       </div>
 
-      {/* Category Breakdown */}
-      <div className="grid grid-cols-1 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Most Popular Gear
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {popularGear.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-blue-600">#{index + 1}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-sm text-gray-600 capitalize">{item.category}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{item.rentalCount}</p>
-                    <p className="text-xs text-gray-600">rentals</p>
-                  </div>
-                </div>
-              ))}
-              {popularGear.length === 0 && (
-                <p className="text-gray-600 text-center py-4">No rental data available</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Category Distribution Chart */}
-      <GearCategoryChart categoryStats={categoryStats} />
+      {/* Additional analytics removed; keeping stats cards and management grid only. */}
 
       {/* Gear Grid */}
       <GearGrid gear={gear} existingCategories={categories} />

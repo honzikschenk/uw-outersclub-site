@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TrendingUp, BarChart3, PieChart, Users, Package } from "lucide-react";
-import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import { TrendingUp, BarChart3, PieChart, Users, Package, Shield, Database } from "lucide-react";
 import MembershipGrowthChart from "@/components/admin/MembershipGrowthChart";
 import GearUtilizationChart from "@/components/admin/GearUtilizationChart";
 import OverdueAnalysis from "@/components/admin/OverdueAnalysis";
@@ -154,12 +153,84 @@ export default async function AnalyticsPage() {
     }))
     .sort((a, b) => b.utilizationRate - a.utilizationRate);
 
+  // Additional backend-aware analytics
+  // Aggregate admins count
+  const adminCount = (members || []).filter((m) => (m as any).admin).length;
+
+  // Compute total active units across all gear
+  const totalActiveUnits = gear.reduce(
+    (sum, g: any) => sum + (g.unit_count ?? g.num_available ?? 0),
+    0,
+  );
+
+  // Top members by number of rentals
+  const rentalsByUser: Record<string, number> = {};
+  for (const r of lentItems) {
+    rentalsByUser[r.user_id] = (rentalsByUser[r.user_id] || 0) + 1;
+  }
+  const userNameById = new Map<string, string>();
+  for (const m of members) userNameById.set((m as any).user_id, (m as any).name || "Unknown");
+  const topMembers = Object.entries(rentalsByUser)
+    .map(([userId, count]) => ({ userId, name: userNameById.get(userId) || "Unknown", count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Top gear by rentals
+  const rentalsByGear: Record<number, number> = {} as any;
+  for (const r of lentItems) {
+    rentalsByGear[r.gear_id as any] = (rentalsByGear[r.gear_id as any] || 0) + 1;
+  }
+  const gearNameById = new Map<number, string>();
+  for (const g of gear)
+    gearNameById.set((g as any).id, (g as any).name || `Gear #${(g as any).id}`);
+  const topGear = Object.entries(rentalsByGear)
+    .map(([gearId, count]) => ({
+      gearId: Number(gearId),
+      name: gearNameById.get(Number(gearId)) || `Gear #${gearId}`,
+      count: count as number,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Simple integrity checks
+  const rentalsWithMissingGear = lentItems.filter(
+    (r) => !gearNameById.has(r.gear_id as any),
+  ).length;
+  const gearWithZeroUnits = gear.filter(
+    (g: any) => (g.unit_count ?? g.num_available ?? 0) === 0,
+  ).length;
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-gray-600 mt-2">Comprehensive insights and performance metrics</p>
+        <p className="text-gray-600 mt-2">
+          Insights grounded in Supabase data models and operational metrics
+        </p>
       </div>
+
+      {/* Backend Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" /> Backend overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-700 space-y-2">
+          <p>
+            The backend uses Supabase tables to model the system: <strong>Membership</strong> for
+            users and roles, <strong>Gear</strong> and per-unit <strong>GearItem</strong> for
+            inventory, and <strong>Lent</strong> for rentals history and status. Aggregates like
+            monthly revenue are stored in <strong>MonthlyStats</strong>.
+          </p>
+          <ul className="list-disc pl-5 grid grid-cols-1 md:grid-cols-2 gap-y-1">
+            <li>Auth: Supabase Auth with admin flag on Membership</li>
+            <li>Inventory: Gear with unit counts from GearItem</li>
+            <li>Rentals: Lent rows track lent/due/returned</li>
+            <li>APIs: Admin endpoints enrich analytics (e.g., gear-items/counts)</li>
+          </ul>
+        </CardContent>
+      </Card>
 
       {/* Key Performance Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -216,6 +287,16 @@ export default async function AnalyticsPage() {
               %
             </div>
             <p className="text-xs text-gray-600">Across all categories</p>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Admins / Units</CardTitle>
+            <Shield className="h-4 w-4 text-sky-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-sky-600">{adminCount}</div>
+            <p className="text-xs text-gray-600">{totalActiveUnits} active gear units</p>
           </CardContent>
         </Card>
       </div>
@@ -291,6 +372,73 @@ export default async function AnalyticsPage() {
       </div>
 
       <OverdueAnalysis rentals={lentItems} overdueRentals={overdueRentals} />
+
+      {/* Operational leaderboards and checks */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top members by rentals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {topMembers.map((m) => (
+                <div
+                  key={m.userId}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                >
+                  <span className="font-medium">{m.name}</span>
+                  <span className="text-sm text-gray-700">{m.count} rentals</span>
+                </div>
+              ))}
+              {topMembers.length === 0 && (
+                <p className="text-sm text-gray-600">No rental activity yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top gear by rentals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {topGear.map((g) => (
+                <div
+                  key={g.gearId}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                >
+                  <span className="font-medium">{g.name}</span>
+                  <span className="text-sm text-gray-700">{g.count} rentals</span>
+                </div>
+              ))}
+              {topGear.length === 0 && (
+                <p className="text-sm text-gray-600">No gear rental activity yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Data integrity checks</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-3 bg-gray-50 rounded">
+            <p className="text-xs text-gray-600">Rentals with missing gear</p>
+            <p className="text-xl font-bold">{rentalsWithMissingGear}</p>
+          </div>
+          <div className="p-3 bg-gray-50 rounded">
+            <p className="text-xs text-gray-600">Gear with 0 active units</p>
+            <p className="text-xl font-bold">{gearWithZeroUnits}</p>
+          </div>
+          <div className="p-3 bg-gray-50 rounded">
+            <p className="text-xs text-gray-600">Overdue rentals</p>
+            <p className="text-xl font-bold text-red-600">{overdueRentals.length}</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

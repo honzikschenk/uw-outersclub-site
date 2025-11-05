@@ -1,8 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Users, UserCheck, UserX, Shield, Calendar, Search, Filter } from "lucide-react";
+import { Users, UserCheck, Shield, Calendar } from "lucide-react";
 import UserManagementTable from "@/components/admin/UserManagementTable";
 
 export default async function UsersPage() {
